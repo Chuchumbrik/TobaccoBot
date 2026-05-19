@@ -10,20 +10,25 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from bot.config import BotConfig
+from bot.cart_log import entries_from_batch, get_cart_log
 from bot.formatters import (
     format_cart_batch,
+    format_cart_log,
     format_check_result,
     format_flavor_search,
     format_help,
+    format_site_cart,
 )
 from bot.keyboards import (
     BTN_CANCEL,
     BTN_CART,
     BTN_CART_LIST,
+    BTN_CART_LOG,
     BTN_HELP,
     BTN_LIST,
     BTN_SEARCH,
     BTN_SINGLE,
+    BTN_VIEW_CART,
     MENU_BUTTONS,
     main_menu_keyboard,
 )
@@ -63,6 +68,19 @@ def get_service(context: ContextTypes.DEFAULT_TYPE) -> OshishaService:
 
 def get_config(context: ContextTypes.DEFAULT_TYPE) -> BotConfig:
     return context.application.bot_data[CONFIG_KEY]
+
+
+def _user_snapshot(update: Update) -> tuple[int, str | None, str | None]:
+    user = update.effective_user
+    if not user:
+        return 0, None, None
+    return user.id, user.username, user.full_name
+
+
+def _can_view_all_cart_log(config: BotConfig, user_id: int) -> bool:
+    if not config.telegram_admin_ids:
+        return True
+    return user_id in config.telegram_admin_ids
 
 
 async def _reply(
@@ -163,6 +181,16 @@ async def cmd_cartlist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await _prompt_cart_list(update, context)
 
 
+async def cmd_cartview(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    clear_mode(context)
+    await _run_cart_view(update, context)
+
+
+async def cmd_cartlog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    clear_mode(context)
+    await _run_cart_log(update, context)
+
+
 async def handle_cyrillic_search_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -209,6 +237,14 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
     if text == BTN_CART_LIST:
         await _prompt_cart_list(update, context)
+        return
+    if text == BTN_VIEW_CART:
+        clear_mode(context)
+        await _run_cart_view(update, context)
+        return
+    if text == BTN_CART_LOG:
+        clear_mode(context)
+        await _run_cart_log(update, context)
 
 
 async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -371,6 +407,18 @@ async def _run_cart_add(
     )
     try:
         batch = get_service(context).add_to_cart(lines)
+        user_id, username, full_name = _user_snapshot(update)
+        if user_id:
+            config = get_config(context)
+            log = get_cart_log(context, config.cart_log_path)
+            log.append_entries(
+                entries_from_batch(
+                    batch,
+                    telegram_user_id=user_id,
+                    username=username,
+                    full_name=full_name,
+                )
+            )
         await status.edit_text(
             format_cart_batch(batch),
             parse_mode=ParseMode.HTML,
@@ -381,6 +429,54 @@ async def _run_cart_add(
     except Exception:
         logger.exception("add_to_cart failed")
         await status.edit_text("Ошибка при добавлении в корзину.")
+
+
+async def _run_cart_view(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    status = await update.message.reply_text(
+        "Загружаю корзину с сайта…",
+        reply_markup=main_menu_keyboard(),
+    )
+    try:
+        cart = get_service(context).view_cart()
+        await status.edit_text(
+            format_site_cart(cart),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+    except OshishaAuthError as exc:
+        await status.edit_text(f"Ошибка входа на Oshisha: {exc}")
+    except Exception:
+        logger.exception("view_cart failed")
+        await status.edit_text("Не удалось загрузить корзину.")
+
+
+async def _run_cart_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    config = get_config(context)
+    user_id, _, _ = _user_snapshot(update)
+    show_all = _can_view_all_cart_log(config, user_id)
+    log = get_cart_log(context, config.cart_log_path)
+    if show_all:
+        entries = log.read_recent(config.cart_log_display_limit)
+        title = "Журнал добавлений из бота"
+    else:
+        entries = log.read_recent(
+            config.cart_log_display_limit,
+            telegram_user_id=user_id,
+        )
+        title = "Ваши добавления в корзину"
+    text = format_cart_log(entries, title=title, show_user=show_all)
+    if len(text) > 4000:
+        text = text[:3990] + "\n…"
+    await update.message.reply_text(
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=main_menu_keyboard(),
+        disable_web_page_preview=True,
+    )
 
 
 async def _run_flavor_search(

@@ -6,5 +6,10 @@ __pycache__/
 .cookies.txt
 .page.html
 data/sessions/
+data/cart_log.jsonl
+data/_cart_page.html
+data/_basket_ajax.json
+data/_probe_out.txt
+data/_app_snippet.js
 data/vocab/cache/
 data/vocab/generated/

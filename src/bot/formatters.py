@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from oshisha.cart import CartAddBatchResult, CartAddResult
+from oshisha.cart import CartAddBatchResult, CartAddResult, CartView
+
+from bot.cart_log import CartLogEntry
 from oshisha.catalog import ProductCheckResult
 from oshisha.flavor_search import FlavorSearchResult
 
@@ -74,6 +76,52 @@ def format_cart_item(r: CartAddResult) -> str:
     return f"{icon} <b>{_esc(r.query)}</b> — {r.message}{extra}"
 
 
+def format_site_cart(cart: CartView) -> str:
+    if cart.empty or not cart.items:
+        return (
+            "🛒 <b>Корзина на сайте пуста</b>\n\n"
+            f'<a href="{_esc(cart.cart_url)}">Открыть корзину</a>'
+        )
+    lines = [f"🛒 <b>Корзина на сайте</b> ({len(cart.items)} поз.)"]
+    if cart.total_sum is not None:
+        lines[0] += f" — <b>{int(cart.total_sum)} ₽</b>"
+    lines.append("")
+    for i, item in enumerate(cart.items, 1):
+        qty = int(item.quantity) if item.quantity == int(item.quantity) else item.quantity
+        price_part = ""
+        if item.sum_price is not None:
+            price_part = f" — {int(item.sum_price)} ₽"
+        elif item.price is not None:
+            price_part = f" — {int(item.price)} ₽"
+        lines.append(f"{i}. {_esc(item.name)} ×{qty}{price_part}")
+    lines.append("")
+    lines.append(f'<a href="{_esc(cart.cart_url)}">Открыть корзину</a>')
+    return "\n".join(lines)
+
+
+def format_cart_log(
+    entries: list[CartLogEntry],
+    *,
+    title: str,
+    show_user: bool,
+) -> str:
+    if not entries:
+        return f"<b>{_esc(title)}</b>\n\nПока нет записей."
+    lines = [f"<b>{_esc(title)}</b>", ""]
+    for entry in reversed(entries):
+        icon = "✅" if entry.success else "❌"
+        ts = entry.ts.replace("T", " ").replace("Z", " UTC")
+        who = f" <i>{_esc(entry.display_user())}</i>" if show_user else ""
+        name = f"\n→ {_esc(entry.product_name)}" if entry.product_name else ""
+        qty = f" ×{entry.quantity}" if entry.quantity > 1 else ""
+        price = f", {entry.line_price} ₽" if entry.line_price else ""
+        lines.append(
+            f"{icon} <code>{_esc(entry.query)}</code>{qty}{price}{name}\n"
+            f"<i>{ts}</i>{who} — {entry.message}"
+        )
+    return "\n\n".join(lines)
+
+
 def format_cart_batch(batch: CartAddBatchResult) -> str:
     lines = [format_cart_item(r) for r in batch.items]
     if not lines:
@@ -95,8 +143,9 @@ def format_help() -> str:
         "<b>🔍 Поиск по вкусу</b> — <code>/search</code>\n"
         "Пример: <code>малина 200</code>\n\n"
         "<b>📦 Проверка</b> — одна строка <code>/check</code> или список <code>/list</code>\n\n"
-        "<b>🛒 В корзину</b> — <code>/cart</code> или список <code>/cartlist</code>\n"
-        "Те же строки, что для проверки; на сайте нужен вход в аккаунт.\n\n"
+        "<b>🛒 В корзину</b> — <code>/cart</code> или <code>/cartlist</code>\n"
+        "<b>👀 Корзина</b> — что сейчас на сайте (<code>/cartview</code>)\n"
+        "<b>📜 Журнал</b> — кто добавил из бота (<code>/cartlog</code>)\n\n"
         "<b>↩️ Отмена</b> — выйти из текущего шага."
     )
 

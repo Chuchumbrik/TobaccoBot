@@ -11,7 +11,9 @@ from .auth import OshishaAuth, OshishaAuthError
 from .catalog import OshishaCatalog, ProductCheckResult
 
 ADD2BASKET_PATH = "/local/templates/Oshisha/include/add2basket.php"
+BASKET_AJAX_PATH = "/bitrix/components/bitrix/sale.basket.basket/ajax.php"
 CART_URL = "/personal/cart/"
+DEFAULT_SITE_ID = "N2"
 
 
 @dataclass
@@ -25,6 +27,28 @@ class CartAddResult:
     product_id: str | None = None
     quantity: int = 0
     line_price: int | None = None
+
+
+@dataclass
+class CartLineItem:
+    """Строка корзины на сайте."""
+
+    name: str
+    quantity: float
+    price: float | None = None
+    sum_price: float | None = None
+    product_id: str | None = None
+
+
+@dataclass
+class CartView:
+    """Содержимое корзины Oshisha."""
+
+    items: list[CartLineItem] = field(default_factory=list)
+    total_sum: float | None = None
+    total_sum_formatted: str | None = None
+    cart_url: str = CART_URL
+    empty: bool = False
 
 
 @dataclass
@@ -44,9 +68,10 @@ class CartAddBatchResult:
 class OshishaCart:
     """Корзина через add2basket.php (как кнопка «В корзину» на сайте)."""
 
-    def __init__(self, auth: OshishaAuth) -> None:
+    def __init__(self, auth: OshishaAuth, *, site_id: str = DEFAULT_SITE_ID) -> None:
         self.auth = auth
         self.base_url = auth.base_url
+        self.site_id = site_id
 
     def _post_items(self, payloads: list[dict[str, Any]]) -> dict[str, Any]:
         if not payloads:
@@ -167,6 +192,68 @@ class OshishaCart:
 
         return batch
 
+    def fetch_cart(self) -> CartView:
+        """Текущая корзина аккаунта (Bitrix sale.basket.basket/ajax.php)."""
+        sessid = self.auth.fetch_sessid()
+        url = urljoin(self.base_url, BASKET_AJAX_PATH)
+        resp = self.auth._client.post(
+            url,
+            data={
+                "sessid": sessid,
+                "site_id": self.site_id,
+                "basketAction": "recalculateAjax",
+            },
+            headers={
+                "X-Requested-With": "XMLHttpRequest",
+                "Origin": self.base_url,
+                "Referer": urljoin(self.base_url, CART_URL),
+            },
+        )
+        resp.raise_for_status()
+        try:
+            data = resp.json()
+        except json.JSONDecodeError as exc:
+            raise OshishaAuthError(f"Некорректный ответ корзины: {resp.text[:200]}") from exc
+
+        basket_data = data.get("BASKET_DATA") or {}
+        if basket_data.get("EMPTY_BASKET"):
+            return CartView(
+                empty=True,
+                cart_url=urljoin(self.base_url, CART_URL),
+            )
+
+        rows = (basket_data.get("GRID") or {}).get("ROWS") or {}
+        items: list[CartLineItem] = []
+        for row in rows.values():
+            if not isinstance(row, dict):
+                continue
+            name = str(row.get("NAME") or "").strip()
+            if not name:
+                continue
+            qty = _to_float(row.get("QUANTITY")) or 0.0
+            price = _to_float(row.get("PRICE"))
+            sum_price = _to_float(row.get("SUM"))
+            if sum_price is None and price is not None:
+                sum_price = price * qty
+            items.append(
+                CartLineItem(
+                    name=name,
+                    quantity=qty,
+                    price=price,
+                    sum_price=sum_price,
+                    product_id=str(row.get("PRODUCT_ID") or "") or None,
+                )
+            )
+
+        total = _to_float(basket_data.get("allSum"))
+        return CartView(
+            items=items,
+            total_sum=total,
+            total_sum_formatted=basket_data.get("allSum_FORMATED"),
+            cart_url=urljoin(self.base_url, CART_URL),
+            empty=not items,
+        )
+
     def add_queries(self, catalog: OshishaCatalog, lines: list[str]) -> CartAddBatchResult:
         """Найти позиции и добавить в корзину."""
         checks: list[ProductCheckResult] = []
@@ -185,5 +272,14 @@ def _to_int(value: Any) -> int | None:
         return None
     try:
         return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_float(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
     except (TypeError, ValueError):
         return None

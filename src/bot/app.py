@@ -13,6 +13,8 @@ from bot.handlers import (
     CONFIG_KEY,
     cmd_cart,
     cmd_cartlist,
+    cmd_cartlog,
+    cmd_cartview,
     cmd_check,
     cmd_help,
     cmd_list,
@@ -39,6 +41,8 @@ async def _setup_bot_commands(application: Application) -> None:
             BotCommand("list", "Проверка списка"),
             BotCommand("cart", "В корзину — одна позиция"),
             BotCommand("cartlist", "В корзину — список"),
+            BotCommand("cartview", "Корзина на сайте"),
+            BotCommand("cartlog", "Журнал добавлений"),
             BotCommand("start", "Меню и справка"),
             BotCommand("help", "Справка"),
         ]
@@ -77,6 +81,8 @@ def build_application(config: BotConfig | None = None) -> Application:
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("cart", cmd_cart))
     app.add_handler(CommandHandler("cartlist", cmd_cartlist))
+    app.add_handler(CommandHandler("cartview", cmd_cartview))
+    app.add_handler(CommandHandler("cartlog", cmd_cartlog))
     app.add_handler(CommandHandler(SEARCH_COMMANDS, cmd_search))
     app.add_handler(
         MessageHandler(

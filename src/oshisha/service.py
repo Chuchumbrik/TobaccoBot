@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from .auth import OshishaAuth, OshishaAuthError
-from .cart import CartAddBatchResult, OshishaCart
+from .cart import CartAddBatchResult, CartView, OshishaCart
 from .catalog import OshishaCatalog, ProductCheckResult
 from .flavor_search import FlavorSearchResult, search_by_flavor
 
@@ -55,6 +55,13 @@ class OshishaService:
         if self._auth is None:
             raise OshishaAuthError("Сессия не инициализирована")
         return OshishaCart(self._auth).add_queries(catalog, lines)
+
+    def view_cart(self) -> CartView:
+        """Содержимое корзины на сайте."""
+        self._ensure_login()
+        if self._auth is None:
+            raise OshishaAuthError("Сессия не инициализирована")
+        return OshishaCart(self._auth).fetch_cart()
 
     def search_flavor(
         self,

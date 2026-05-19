@@ -11,6 +11,15 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _parse_admin_ids(raw: str) -> frozenset[int]:
+    ids: set[int] = set()
+    for part in raw.replace(";", ",").split(","):
+        part = part.strip()
+        if part.isdigit():
+            ids.add(int(part))
+    return frozenset(ids)
+
+
 @dataclass(frozen=True)
 class BotConfig:
     telegram_token: str
@@ -19,6 +28,9 @@ class BotConfig:
     telegram_proxy: str | None = None
     telegram_api_base_url: str | None = None
     telegram_connect_timeout: float = 30.0
+    telegram_admin_ids: frozenset[int] = frozenset()
+    cart_log_path: Path | None = None
+    cart_log_display_limit: int = 25
 
 
 def _env_proxy() -> str | None:
@@ -37,6 +49,7 @@ def load_config() -> BotConfig:
 
     base_url = os.environ.get("TELEGRAM_API_BASE_URL", "").strip() or None
 
+    log_path = os.environ.get("CART_LOG_PATH", "").strip()
     return BotConfig(
         telegram_token=token,
         flavor_search_limit=int(os.environ.get("FLAVOR_SEARCH_LIMIT", "15")),
@@ -46,4 +59,9 @@ def load_config() -> BotConfig:
         telegram_connect_timeout=float(
             os.environ.get("TELEGRAM_CONNECT_TIMEOUT", "30")
         ),
+        telegram_admin_ids=_parse_admin_ids(
+            os.environ.get("TELEGRAM_ADMIN_IDS", "")
+        ),
+        cart_log_path=Path(log_path) if log_path else ROOT / "data" / "cart_log.jsonl",
+        cart_log_display_limit=int(os.environ.get("CART_LOG_DISPLAY_LIMIT", "25")),
     )

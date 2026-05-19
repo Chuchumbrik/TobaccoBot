@@ -76,5 +76,7 @@ PROMPT_IDLE = (
     "Выберите действие кнопкой внизу или командой:\n"
     "• <code>/search</code> — поиск по вкусу\n"
     "• <code>/check</code> / <code>/list</code> — проверка\n"
-    "• <code>/cart</code> / <code>/cartlist</code> — в корзину"
+    "• <code>/cart</code> / <code>/cartlist</code> — в корзину\n"
+    "• <code>/cartview</code> — корзина на сайте\n"
+    "• <code>/cartlog</code> — журнал добавлений"
 )
