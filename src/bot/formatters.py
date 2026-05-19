@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from oshisha.cart import CartAddBatchResult, CartAddResult, CartView
 from oshisha.catalog import ProductCheckResult
-from oshisha.flavor_search import FlavorSearchResult
+from oshisha.flavor_search import FlavorSearchHit, FlavorSearchResult
 
 from bot.cart_log import CartLogEntry, CartLogState, format_session_started, format_ts_display
 from bot.messages import (
@@ -69,6 +69,63 @@ def format_flavor_search(result: FlavorSearchResult) -> str:
         blocks.append(line)
 
     return header + "\n".join(blocks) + HINT_AFTER_SEARCH
+
+
+def format_flavor_pick_confirm(
+    hit: FlavorSearchHit,
+    *,
+    list_number: int,
+    variants_in_stock: int,
+) -> str:
+    brand = f"<b>{_esc(hit.brand_display)}</b> · " if hit.brand_display else ""
+    lines = [
+        "<b>🛒 Какой табак кладём в корзину?</b>",
+    ]
+    if variants_in_stock > 1:
+        lines.append(
+            f"<i>Вариант {list_number} из {variants_in_stock} в наличии</i>\n"
+        )
+    lines.append(f"✅ {brand}{_esc(hit.product.name)}")
+    extras: list[str] = []
+    if hit.weight_note:
+        extras.append(hit.weight_note)
+    if hit.product.price is not None:
+        extras.append(f"{int(hit.product.price)} ₽")
+    if hit.product.max_quantity is not None:
+        extras.append(f"остаток {int(hit.product.max_quantity)}")
+    if extras:
+        lines.append(f"<i>{', '.join(extras)}</i>")
+    lines.append("\nПодтвердите кнопкой ниже или выберите другой вариант.")
+    return "\n".join(lines)
+
+
+def format_check_pick_confirm(
+    check: ProductCheckResult,
+    *,
+    list_number: int,
+    variants_in_stock: int,
+) -> str:
+    lines = [
+        "<b>🛒 Какой табак кладём в корзину?</b>",
+    ]
+    if variants_in_stock > 1:
+        lines.append(
+            f"<i>Позиция {list_number} из {variants_in_stock} в наличии</i>\n"
+        )
+    lines.append(f"✅ <b>{_esc(check.query)}</b>")
+    if check.matched_name:
+        lines.append(f"→ {_esc(check.matched_name)}")
+    extras: list[str] = []
+    if check.price is not None:
+        extras.append(f"{int(check.price)} ₽")
+    if check.max_quantity is not None:
+        extras.append(f"остаток {int(check.max_quantity)}")
+    if check.pack_count > 1:
+        extras.append(f"×{check.pack_count} уп.")
+    if extras:
+        lines.append(f"<i>{', '.join(extras)}</i>")
+    lines.append("\nПодтвердите кнопкой ниже или выберите другой вариант.")
+    return "\n".join(lines)
 
 
 def format_cart_item(r: CartAddResult) -> str:

@@ -8,7 +8,7 @@ from pathlib import Path
 from .auth import OshishaAuth, OshishaAuthError
 from .cart import CartAddBatchResult, CartView, OshishaCart
 from .catalog import OshishaCatalog, ProductCheckResult
-from .flavor_search import FlavorSearchResult, search_by_flavor
+from .flavor_search import FlavorSearchHit, FlavorSearchResult, search_by_flavor
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SESSION = ROOT / "data" / "sessions" / "oshisha.json"
@@ -55,6 +55,43 @@ class OshishaService:
         if self._auth is None:
             raise OshishaAuthError("Сессия не инициализирована")
         return OshishaCart(self._auth).add_queries(catalog, lines)
+
+    def add_checks_to_cart(
+        self,
+        checks: list[ProductCheckResult],
+        *,
+        indices: list[int] | None = None,
+    ) -> CartAddBatchResult:
+        """Добавить в корзину уже проверенные позиции (по индексам или все)."""
+        self._ensure_login()
+        if self._auth is None:
+            raise OshishaAuthError("Сессия не инициализирована")
+        if indices is None:
+            selected = checks
+        else:
+            selected = [checks[i] for i in indices if 0 <= i < len(checks)]
+        queries = [c.query for c in selected]
+        return OshishaCart(self._auth).add_checks(selected, queries=queries)
+
+    def add_flavor_hits_to_cart(
+        self,
+        hits: list[FlavorSearchHit],
+        indices: list[int],
+    ) -> CartAddBatchResult:
+        """Добавить в корзину позиции из результатов поиска по вкусу."""
+        self._ensure_login()
+        if self._auth is None:
+            raise OshishaAuthError("Сессия не инициализирована")
+        items: list[tuple] = []
+        for i in indices:
+            if i < 0 or i >= len(hits):
+                continue
+            hit = hits[i]
+            label = hit.product.name
+            if hit.flavor_query:
+                label = f"{hit.flavor_query} → {hit.product.name}"
+            items.append((hit.product, label, 1))
+        return OshishaCart(self._auth).add_from_products(items)
 
     def view_cart(self) -> CartView:
         """Содержимое корзины на сайте."""

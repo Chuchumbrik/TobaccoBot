@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from .auth import OshishaAuth, OshishaAuthError
-from .catalog import OshishaCatalog, ProductCheckResult
+from .catalog import CatalogProduct, OshishaCatalog, ProductCheckResult
 
 ADD2BASKET_PATH = "/local/templates/Oshisha/include/add2basket.php"
 BASKET_AJAX_PATH = "/bitrix/components/bitrix/sale.basket.basket/ajax.php"
@@ -96,6 +96,24 @@ class OshishaCart:
         if data.get("STATUS") != "success":
             raise OshishaAuthError(f"Корзина: {data}")
         return data
+
+    @staticmethod
+    def _payload_from_product(
+        product: CatalogProduct,
+        *,
+        quantity: int = 1,
+    ) -> dict[str, Any] | None:
+        if not product.can_buy:
+            return None
+        qty = max(1, quantity)
+        unit = int(product.price) if product.price is not None else 0
+        return {
+            "ID": str(product.id),
+            "QUANTITY": qty,
+            "TYPE": "add",
+            "PRICE": unit * qty,
+            "BRAND": "",
+        }
 
     @staticmethod
     def _payload_from_check(check: ProductCheckResult) -> dict[str, Any] | None:
@@ -253,6 +271,65 @@ class OshishaCart:
             cart_url=urljoin(self.base_url, CART_URL),
             empty=not items,
         )
+
+    def add_from_products(
+        self,
+        items: list[tuple[CatalogProduct, str, int]],
+    ) -> CartAddBatchResult:
+        """Добавить товары по уже известным карточкам каталога."""
+        results: list[CartAddResult] = []
+        payloads: list[dict[str, Any]] = []
+
+        for product, query, qty in items:
+            payload = self._payload_from_product(product, quantity=qty)
+            if not payload:
+                results.append(
+                    CartAddResult(
+                        query=query,
+                        success=False,
+                        message="нет в наличии",
+                        matched_name=product.name,
+                        product_id=product.id,
+                    )
+                )
+                continue
+            payloads.append(payload)
+            results.append(
+                CartAddResult(
+                    query=query,
+                    success=False,
+                    message="_pending",
+                    matched_name=product.name,
+                    product_id=product.id,
+                    quantity=payload["QUANTITY"],
+                    line_price=payload["PRICE"],
+                )
+            )
+
+        batch = CartAddBatchResult(items=results)
+        if not payloads:
+            return batch
+
+        api = self._post_items(payloads)
+        api_items = api.get("ITEMS") or {}
+        batch.cart_quantity = _to_int(api.get("QUANTITY"))
+        batch.cart_sum_price = _to_int(api.get("SUM_PRICE"))
+        batch.cart_url = urljoin(self.base_url, CART_URL)
+
+        payload_idx = 0
+        for item in batch.items:
+            if item.message != "_pending":
+                continue
+            pid = payloads[payload_idx]["ID"]
+            payload_idx += 1
+            row = api_items.get(pid) or api_items.get(str(pid))
+            item.success = True
+            item.message = "добавлено"
+            if row:
+                item.matched_name = row.get("NAME") or item.matched_name
+                item.line_price = _to_int(row.get("PRICE")) or item.line_price
+
+        return batch
 
     def add_queries(self, catalog: OshishaCatalog, lines: list[str]) -> CartAddBatchResult:
         """Найти позиции и добавить в корзину."""

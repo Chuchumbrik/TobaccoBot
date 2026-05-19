@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 
 MODE_KEY = "await_mode"
 
-PROMPT_FOOTER = "\n\n<i>❌ Отмена · 🏠 Меню · /help</i>"
+PROMPT_FOOTER = "\n\n<i>Под сообщением — ❌ Отмена. Также: 🏠 Меню · /help</i>"
 
 MODE_FLAVOR = "flavor"
 MODE_SINGLE = "single"

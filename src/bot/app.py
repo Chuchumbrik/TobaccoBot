@@ -6,7 +6,7 @@ import logging
 import re
 
 from telegram import BotCommand
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from bot.config import BotConfig, load_config
 from bot.handlers import (
@@ -22,6 +22,7 @@ from bot.handlers import (
     cmd_menu,
     cmd_search,
     cmd_start,
+    handle_callback_query,
     handle_cyrillic_search_command,
     handle_menu_button,
     handle_text_message,
@@ -44,8 +45,8 @@ async def _setup_bot_commands(application: Application) -> None:
             BotCommand("search", "Поиск по вкусу на сайте"),
             BotCommand("check", "Проверить одну позицию"),
             BotCommand("list", "Проверить список строк"),
-            BotCommand("cart", "Добавить в корзину"),
-            BotCommand("cartlist", "Список в корзину"),
+            BotCommand("cart", "В корзину по строке (команда)"),
+            BotCommand("cartlist", "Список в корзину (команда)"),
             BotCommand("cartview", "Смотреть корзину сайта"),
             BotCommand("cartlog", "Журнал: кто добавлял"),
             BotCommand("logreset", "Новый заказ в журнале"),
@@ -97,6 +98,7 @@ def build_application(config: BotConfig | None = None) -> Application:
         )
     )
     app.add_handler(MessageHandler(filters.TEXT & filters.Regex(_MENU_PATTERN), handle_menu_button))
+    app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 

@@ -5,24 +5,53 @@ from __future__ import annotations
 import logging
 import re
 
-from telegram import Message, Update
+from telegram import InlineKeyboardMarkup, Message, Update
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
+from bot.action_context import (
+    clear_action_context,
+    clear_pick_message_id,
+    get_checks,
+    get_flavor_hits,
+    get_pick_message_id,
+    save_checks,
+    save_flavor_search,
+    set_pick_message_id,
+)
 from bot.cart_log import entries_from_batch, format_session_started, get_cart_log
 from bot.config import BotConfig
 from bot.formatters import (
     format_cart_batch,
+    format_cart_item,
     format_cart_log,
+    format_check_pick_confirm,
     format_check_results,
+    format_flavor_pick_confirm,
     format_flavor_search,
     format_site_cart,
 )
+from bot.inline_keyboards import (
+    CB_BACK_CHECK,
+    CB_BACK_FLAVOR,
+    CB_CANCEL,
+    CB_CHECK_CONFIRM,
+    CB_CHECK_PICK,
+    CB_DISMISS,
+    CB_FLAVOR_CONFIRM,
+    CB_FLAVOR_PICK,
+    CB_SEARCH_AGAIN,
+    _in_stock_check_indices,
+    _in_stock_flavor_indices,
+    check_confirm_keyboard,
+    check_results_keyboard,
+    flavor_confirm_keyboard,
+    flavor_search_keyboard,
+    inline_cancel_keyboard,
+)
 from bot.keyboards import (
     BTN_CANCEL,
-    BTN_CART,
-    BTN_CART_LIST,
     BTN_CART_LOG,
     BTN_LOG_RESET,
     BTN_CHECK,
@@ -93,6 +122,24 @@ async def _send_status(update: Update, text: str) -> Message | None:
     return await update.message.reply_text(text)
 
 
+async def _send_result_message(
+    status: Message | None,
+    update: Update,
+    text: str,
+    *,
+    text_kwargs: dict,
+    inline_markup: InlineKeyboardMarkup | None,
+) -> None:
+    """Отправить результат новым сообщением, если редактирование недоступно."""
+    send_kwargs = dict(text_kwargs)
+    if inline_markup is not None:
+        send_kwargs["reply_markup"] = inline_markup
+    if status is not None:
+        await status.chat.send_message(text, **send_kwargs)
+    elif update.message:
+        await update.message.reply_text(text, **send_kwargs)
+
+
 async def _finish_status(
     status: Message | None,
     update: Update,
@@ -100,28 +147,43 @@ async def _finish_status(
     *,
     parse_mode: str | None = ParseMode.HTML,
     disable_web_page_preview: bool = False,
+    inline_markup: InlineKeyboardMarkup | None = None,
 ) -> None:
     """Заменить «Проверяю…» на результат; при ошибке edit — новое сообщение."""
-    kwargs: dict = {"reply_markup": main_menu_keyboard()}
+    text_kwargs: dict = {}
     if parse_mode is not None:
-        kwargs["parse_mode"] = parse_mode
+        text_kwargs["parse_mode"] = parse_mode
     if disable_web_page_preview:
-        kwargs["disable_web_page_preview"] = True
+        text_kwargs["disable_web_page_preview"] = True
 
     if status is None:
-        if update.message:
-            await update.message.reply_text(text, **kwargs)
+        await _send_result_message(
+            status, update, text, text_kwargs=text_kwargs, inline_markup=inline_markup
+        )
         return
 
     try:
-        await status.edit_text(text, **kwargs)
+        await status.edit_text(text, **text_kwargs)
+        if inline_markup is not None:
+            try:
+                await status.edit_reply_markup(reply_markup=inline_markup)
+            except BadRequest as exc:
+                err = str(exc).lower()
+                if "message is not modified" not in err:
+                    raise
     except BadRequest as exc:
         err = str(exc).lower()
         if "message is not modified" in err:
+            if inline_markup is not None:
+                try:
+                    await status.edit_reply_markup(reply_markup=inline_markup)
+                except BadRequest:
+                    pass
             return
         if "can't be edited" in err or "message to edit not found" in err:
-            if update.message:
-                await update.message.reply_text(text, **kwargs)
+            await _send_result_message(
+                status, update, text, text_kwargs=text_kwargs, inline_markup=inline_markup
+            )
             return
         raise
 
@@ -131,13 +193,33 @@ async def _reply(
     text: str,
     *,
     parse_mode: str | None = ParseMode.HTML,
+    with_menu: bool = True,
 ) -> None:
+    if not update.message:
+        return
+    kwargs: dict = {}
+    if with_menu:
+        kwargs["reply_markup"] = main_menu_keyboard()
+    await update.message.reply_text(
+        text,
+        parse_mode=parse_mode,
+        **kwargs,
+    )
+
+
+async def _reply_step(
+    update: Update,
+    text: str,
+    *,
+    parse_mode: str | None = ParseMode.HTML,
+) -> None:
+    """Подсказка шага сценария: inline «Отмена» под сообщением."""
     if not update.message:
         return
     await update.message.reply_text(
         text,
         parse_mode=parse_mode,
-        reply_markup=main_menu_keyboard(),
+        reply_markup=inline_cancel_keyboard(),
     )
 
 
@@ -162,31 +244,53 @@ async def _send_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 async def _prompt_flavor(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_FLAVOR)
-    await _reply(update, PROMPT_FLAVOR)
+    await _reply_step(update, PROMPT_FLAVOR)
 
 
 async def _prompt_single(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_SINGLE)
-    await _reply(update, PROMPT_SINGLE)
+    await _reply_step(update, PROMPT_SINGLE)
 
 
 async def _prompt_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_LIST)
     config = get_config(context)
     extra = f"\n\n<i>Максимум {config.check_list_max_lines} строк за раз.</i>"
-    await _reply(update, PROMPT_LIST + extra)
+    await _reply_step(update, PROMPT_LIST + extra)
 
 
 async def _prompt_cart_single(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_CART_SINGLE)
-    await _reply(update, PROMPT_CART_SINGLE)
+    await _reply_step(update, PROMPT_CART_SINGLE)
 
 
 async def _prompt_cart_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_CART_LIST)
     config = get_config(context)
     extra = f"\n\n<i>Максимум {config.check_list_max_lines} строк.</i>"
-    await _reply(update, PROMPT_CART_LIST + extra)
+    await _reply_step(update, PROMPT_CART_LIST + extra)
+
+
+def _log_cart_batch(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    batch,
+) -> None:
+    user_id, username, full_name = _user_snapshot(update)
+    if not user_id:
+        return
+    config = get_config(context)
+    log = get_cart_log(context, config.cart_log_path)
+    session_id = log.load_state().session_id
+    log.append_entries(
+        entries_from_batch(
+            batch,
+            telegram_user_id=user_id,
+            username=username,
+            full_name=full_name,
+            session_id=session_id,
+        )
+    )
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -280,10 +384,12 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if text == BTN_CANCEL:
         clear_mode(context)
+        clear_action_context(context)
         await _reply(update, "Шаг отменён.\n\n" + format_welcome())
         return
     if text == BTN_MENU:
         clear_mode(context)
+        clear_action_context(context)
         await _reply(update, format_welcome())
         return
     if text == BTN_HELP:
@@ -298,12 +404,6 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
     if text == BTN_CHECK_LIST:
         await _prompt_list(update, context)
-        return
-    if text == BTN_CART:
-        await _prompt_cart_single(update, context)
-        return
-    if text == BTN_CART_LIST:
-        await _prompt_cart_list(update, context)
         return
     if text == BTN_VIEW_CART:
         clear_mode(context)
@@ -369,7 +469,7 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
         if "\n" in text:
             await _reply(
                 update,
-                "Одна строка — «🛒 Добавить». Несколько — «🛒 Список в корзину».",
+                "Нужна <b>одна</b> строка. Несколько — команда /cartlist.",
             )
             return
         clear_mode(context)
@@ -418,8 +518,14 @@ async def _run_single_check(
     status = await _send_status(update, "Проверяю…")
     try:
         results = get_service(context).check_list([line])
+        save_checks(context, results)
+        inline = check_results_keyboard(results)
         await _finish_status(
-            status, update, format_check_results(results), parse_mode=ParseMode.HTML
+            status,
+            update,
+            format_check_results(results),
+            parse_mode=ParseMode.HTML,
+            inline_markup=inline,
         )
     except OshishaAuthError as exc:
         await _finish_status(status, update, f"Ошибка входа: {exc}", parse_mode=None)
@@ -438,10 +544,17 @@ async def _run_list_check(
     status = await _send_status(update, f"Проверяю {len(lines)} позиций…")
     try:
         results = get_service(context).check_list(lines)
+        save_checks(context, results)
         text = format_check_results(results)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
-        await _finish_status(status, update, text, parse_mode=ParseMode.HTML)
+        await _finish_status(
+            status,
+            update,
+            text,
+            parse_mode=ParseMode.HTML,
+            inline_markup=check_results_keyboard(results),
+        )
     except OshishaAuthError as exc:
         await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
     except Exception:
@@ -464,20 +577,7 @@ async def _run_cart_add(
     status = await _send_status(update, label)
     try:
         batch = get_service(context).add_to_cart(lines)
-        user_id, username, full_name = _user_snapshot(update)
-        if user_id:
-            config = get_config(context)
-            log = get_cart_log(context, config.cart_log_path)
-            session_id = log.load_state().session_id
-            log.append_entries(
-                entries_from_batch(
-                    batch,
-                    telegram_user_id=user_id,
-                    username=username,
-                    full_name=full_name,
-                    session_id=session_id,
-                )
-            )
+        _log_cart_batch(update, context, batch)
         text = format_cart_batch(batch)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
@@ -583,7 +683,7 @@ async def _run_log_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         f"({prev_count} записей в журнале).\n"
         f"Сейчас: <b>{format_session_started(state)}</b> (МСК)\n"
         f"Инициатор: {who}\n\n"
-        "Новые добавления в «🛒 Добавить» попадут в этот заказ. "
+        "Новые добавления в корзину попадут в этот заказ. "
         "Смотреть — «📜 Журнал».",
     )
 
@@ -604,6 +704,7 @@ async def _run_flavor_search(
             query,
             limit=config.flavor_search_limit,
         )
+        save_flavor_search(context, result)
         text = format_flavor_search(result)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
@@ -613,6 +714,7 @@ async def _run_flavor_search(
             text,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
+            inline_markup=flavor_search_keyboard(result.hits),
         )
     except OshishaAuthError as exc:
         await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
@@ -621,3 +723,319 @@ async def _run_flavor_search(
         await _finish_status(
             status, update, "Ошибка при поиске. Попробуйте позже.", parse_mode=None
         )
+
+
+async def handle_callback_query(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    query = update.callback_query
+    if not query or not query.data:
+        return
+
+    data = query.data
+    chat_id = query.message.chat_id if query.message else None
+
+    if data == CB_CANCEL:
+        clear_mode(context)
+        clear_action_context(context)
+        await query.answer("Отменено")
+        if query.message:
+            try:
+                await query.message.edit_reply_markup(reply_markup=None)
+            except BadRequest:
+                pass
+        if chat_id:
+            await context.bot.send_message(
+                chat_id,
+                "Шаг отменён.\n\n" + format_welcome(),
+                parse_mode=ParseMode.HTML,
+                reply_markup=main_menu_keyboard(),
+            )
+        return
+
+    if data == CB_DISMISS:
+        await query.answer()
+        if chat_id:
+            await _remove_pick_message(context, chat_id)
+        if query.message:
+            try:
+                await query.message.edit_reply_markup(reply_markup=None)
+            except BadRequest:
+                pass
+        return
+
+    if data == CB_SEARCH_AGAIN:
+        await query.answer()
+        if chat_id:
+            await _prompt_flavor_from_chat(context, chat_id)
+        return
+
+    if data.startswith(CB_FLAVOR_PICK):
+        await _callback_flavor_pick(update, context, data)
+        return
+
+    if data.startswith(CB_FLAVOR_CONFIRM):
+        await _callback_flavor_confirm(update, context, data)
+        return
+
+    if data == CB_BACK_FLAVOR:
+        await _callback_back_to_list(update, context)
+        return
+
+    if data.startswith(CB_CHECK_PICK):
+        await _callback_check_pick(update, context, data)
+        return
+
+    if data.startswith(CB_CHECK_CONFIRM):
+        await _callback_check_confirm(update, context, data)
+        return
+
+    if data == CB_BACK_CHECK:
+        await _callback_back_to_list(update, context)
+        return
+
+    await query.answer()
+
+
+async def _prompt_flavor_from_chat(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+) -> None:
+    set_mode(context, MODE_FLAVOR)
+    await context.bot.send_message(
+        chat_id,
+        PROMPT_FLAVOR,
+        parse_mode=ParseMode.HTML,
+        reply_markup=inline_cancel_keyboard(),
+    )
+
+
+async def _remove_pick_message(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+) -> None:
+    pick_id = get_pick_message_id(context)
+    if pick_id is None:
+        return
+    try:
+        await context.bot.delete_message(chat_id, pick_id)
+    except BadRequest:
+        pass
+    clear_pick_message_id(context)
+
+
+async def _show_pick_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    text: str,
+    reply_markup,
+) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    chat_id = query.message.chat_id if query.message else None
+    if not chat_id:
+        return
+    await query.answer()
+    await _remove_pick_message(context, chat_id)
+    msg = await context.bot.send_message(
+        chat_id,
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=reply_markup,
+        disable_web_page_preview=True,
+    )
+    set_pick_message_id(context, msg.message_id)
+
+
+async def _callback_back_to_list(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    chat_id = query.message.chat_id if query.message else None
+    await query.answer("Выберите другой вариант в списке выше")
+    if chat_id:
+        await _remove_pick_message(context, chat_id)
+
+
+async def _callback_flavor_pick(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: str,
+) -> None:
+    try:
+        index = int(data.removeprefix(CB_FLAVOR_PICK))
+    except ValueError:
+        if update.callback_query:
+            await update.callback_query.answer("Некорректная кнопка")
+        return
+
+    hits = get_flavor_hits(context)
+    if index < 0 or index >= len(hits):
+        if update.callback_query:
+            await update.callback_query.answer(
+                "Результаты устарели — повторите поиск", show_alert=True
+            )
+        return
+
+    hit = hits[index]
+    if hit.status != "есть":
+        if update.callback_query:
+            await update.callback_query.answer("Нет в наличии", show_alert=True)
+        return
+
+    in_stock = _in_stock_flavor_indices(hits)
+    text = format_flavor_pick_confirm(
+        hit,
+        list_number=index + 1,
+        variants_in_stock=len(in_stock),
+    )
+    await _show_pick_message(
+        update,
+        context,
+        text=text,
+        reply_markup=flavor_confirm_keyboard(index),
+    )
+
+
+async def _callback_flavor_confirm(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: str,
+) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    try:
+        index = int(data.removeprefix(CB_FLAVOR_CONFIRM))
+    except ValueError:
+        await query.answer("Некорректная кнопка")
+        return
+
+    hits = get_flavor_hits(context)
+    if index < 0 or index >= len(hits):
+        await query.answer("Результаты устарели — повторите поиск", show_alert=True)
+        return
+
+    hit = hits[index]
+    if hit.status != "есть":
+        await query.answer("Нет в наличии", show_alert=True)
+        return
+
+    try:
+        batch = get_service(context).add_flavor_hits_to_cart(hits, [index])
+        _log_cart_batch(update, context, batch)
+        item = batch.items[0] if batch.items else None
+        if item and item.success:
+            await query.answer("✅ Добавлено в корзину")
+            chat_id = query.message.chat_id if query.message else None
+            if chat_id:
+                await _remove_pick_message(context, chat_id)
+                await context.bot.send_message(
+                    chat_id,
+                    format_cart_item(item),
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True,
+                )
+        else:
+            msg = item.message if item else "ошибка"
+            await query.answer(f"❌ {msg}", show_alert=True)
+    except OshishaAuthError as exc:
+        await query.answer(f"Ошибка входа: {exc}", show_alert=True)
+    except Exception:
+        logger.exception("callback flavor cart failed")
+        await query.answer("Ошибка добавления", show_alert=True)
+
+
+async def _callback_check_pick(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: str,
+) -> None:
+    try:
+        index = int(data.removeprefix(CB_CHECK_PICK))
+    except ValueError:
+        if update.callback_query:
+            await update.callback_query.answer("Некорректная кнопка")
+        return
+
+    checks = get_checks(context)
+    if index < 0 or index >= len(checks):
+        if update.callback_query:
+            await update.callback_query.answer(
+                "Результаты устарели — повторите проверку", show_alert=True
+            )
+        return
+
+    check = checks[index]
+    if check.status != "есть":
+        if update.callback_query:
+            await update.callback_query.answer("Нет в наличии", show_alert=True)
+        return
+
+    in_stock = _in_stock_check_indices(checks)
+    text = format_check_pick_confirm(
+        check,
+        list_number=index + 1,
+        variants_in_stock=len(in_stock),
+    )
+    await _show_pick_message(
+        update,
+        context,
+        text=text,
+        reply_markup=check_confirm_keyboard(index),
+    )
+
+
+async def _callback_check_confirm(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: str,
+) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    try:
+        index = int(data.removeprefix(CB_CHECK_CONFIRM))
+    except ValueError:
+        await query.answer("Некорректная кнопка")
+        return
+
+    checks = get_checks(context)
+    if index < 0 or index >= len(checks):
+        await query.answer("Результаты устарели — повторите проверку", show_alert=True)
+        return
+
+    check = checks[index]
+    if check.status != "есть":
+        await query.answer("Нет в наличии", show_alert=True)
+        return
+
+    try:
+        batch = get_service(context).add_checks_to_cart(checks, indices=[index])
+        _log_cart_batch(update, context, batch)
+        item = batch.items[0] if batch.items else None
+        if item and item.success:
+            await query.answer("✅ Добавлено в корзину")
+            chat_id = query.message.chat_id if query.message else None
+            if chat_id:
+                await _remove_pick_message(context, chat_id)
+                await context.bot.send_message(
+                    chat_id,
+                    format_cart_item(item),
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True,
+                )
+        else:
+            msg = item.message if item else "ошибка"
+            await query.answer(f"❌ {msg}", show_alert=True)
+    except OshishaAuthError as exc:
+        await query.answer(f"Ошибка входа: {exc}", show_alert=True)
+    except Exception:
+        logger.exception("callback check cart failed")
+        await query.answer("Ошибка добавления", show_alert=True)

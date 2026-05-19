@@ -7,8 +7,6 @@ from telegram import KeyboardButton, ReplyKeyboardMarkup
 BTN_SEARCH = "🔍 Поиск по вкусу"
 BTN_CHECK = "📦 Проверить"
 BTN_CHECK_LIST = "📝 Список"
-BTN_CART = "🛒 Добавить"
-BTN_CART_LIST = "🛒 Список в корзину"
 BTN_VIEW_CART = "👀 Корзина"
 BTN_CART_LOG = "📜 Журнал"
 BTN_LOG_RESET = "🔄 Новый заказ"
@@ -25,8 +23,6 @@ MENU_BUTTONS = frozenset(
         BTN_SEARCH,
         BTN_CHECK,
         BTN_CHECK_LIST,
-        BTN_CART,
-        BTN_CART_LIST,
         BTN_VIEW_CART,
         BTN_CART_LOG,
         BTN_LOG_RESET,
@@ -42,7 +38,6 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
         [
             [KeyboardButton(BTN_SEARCH)],
             [KeyboardButton(BTN_CHECK), KeyboardButton(BTN_CHECK_LIST)],
-            [KeyboardButton(BTN_CART), KeyboardButton(BTN_CART_LIST)],
             [KeyboardButton(BTN_VIEW_CART), KeyboardButton(BTN_CART_LOG)],
             [KeyboardButton(BTN_LOG_RESET)],
             [KeyboardButton(BTN_MENU), KeyboardButton(BTN_HELP)],
