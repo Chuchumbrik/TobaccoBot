@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 from oshisha.cart import CartAddBatchResult, CartAddResult, CartView
-
-from bot.cart_log import CartLogEntry
 from oshisha.catalog import ProductCheckResult
 from oshisha.flavor_search import FlavorSearchResult
+
+from bot.cart_log import CartLogEntry
+from bot.messages import (
+    HINT_AFTER_CART,
+    HINT_AFTER_CHECK,
+    HINT_AFTER_CHECK_LIST,
+    HINT_AFTER_SEARCH,
+)
 
 
 def format_check_result(r: ProductCheckResult) -> str:
@@ -62,7 +68,7 @@ def format_flavor_search(result: FlavorSearchResult) -> str:
             line += f" — {', '.join(extras)}"
         blocks.append(line)
 
-    return header + "\n".join(blocks)
+    return header + "\n".join(blocks) + HINT_AFTER_SEARCH
 
 
 def format_cart_item(r: CartAddResult) -> str:
@@ -132,22 +138,16 @@ def format_cart_batch(batch: CartAddBatchResult) -> str:
         if batch.cart_quantity:
             header += f" ({batch.cart_quantity} шт.)"
     header += f'\n<a href="{_esc(batch.cart_url)}">Открыть корзину</a>\n\n'
-    return header + "\n\n".join(lines)
+    return header + "\n\n".join(lines) + HINT_AFTER_CART
 
 
-def format_help() -> str:
-    return (
-        "<b>TBotTabak</b> — проверка табака на oshisha.cc\n\n"
-        "Сначала выберите действие <b>кнопкой внизу</b> — бот подскажет, "
-        "что отправить. Можно и командами:\n\n"
-        "<b>🔍 Поиск по вкусу</b> — <code>/search</code>\n"
-        "Пример: <code>малина 200</code>\n\n"
-        "<b>📦 Проверка</b> — одна строка <code>/check</code> или список <code>/list</code>\n\n"
-        "<b>🛒 В корзину</b> — <code>/cart</code> или <code>/cartlist</code>\n"
-        "<b>👀 Корзина</b> — что сейчас на сайте (<code>/cartview</code>)\n"
-        "<b>📜 Журнал</b> — кто добавил из бота (<code>/cartlog</code>)\n\n"
-        "<b>↩️ Отмена</b> — выйти из текущего шага."
-    )
+def format_check_results(results: list[ProductCheckResult]) -> str:
+    chunks = [format_check_result(r) for r in results]
+    if not chunks:
+        return "Нет позиций."
+    text = "\n\n".join(chunks)
+    hint = HINT_AFTER_CHECK_LIST if len(results) > 1 else HINT_AFTER_CHECK
+    return text + hint
 
 
 def _esc(text: str) -> str:

@@ -18,6 +18,7 @@ from bot.handlers import (
     cmd_check,
     cmd_help,
     cmd_list,
+    cmd_menu,
     cmd_search,
     cmd_start,
     handle_cyrillic_search_command,
@@ -36,15 +37,16 @@ _MENU_PATTERN = "^(" + "|".join(re.escape(b) for b in MENU_BUTTONS) + ")$"
 async def _setup_bot_commands(application: Application) -> None:
     await application.bot.set_my_commands(
         [
-            BotCommand("search", "Поиск по вкусу"),
-            BotCommand("check", "Проверка одной позиции"),
-            BotCommand("list", "Проверка списка"),
-            BotCommand("cart", "В корзину — одна позиция"),
-            BotCommand("cartlist", "В корзину — список"),
-            BotCommand("cartview", "Корзина на сайте"),
-            BotCommand("cartlog", "Журнал добавлений"),
-            BotCommand("start", "Меню и справка"),
-            BotCommand("help", "Справка"),
+            BotCommand("start", "Главное меню"),
+            BotCommand("help", "Подробная справка"),
+            BotCommand("menu", "Вернуться в меню"),
+            BotCommand("search", "Поиск по вкусу на сайте"),
+            BotCommand("check", "Проверить одну позицию"),
+            BotCommand("list", "Проверить список строк"),
+            BotCommand("cart", "Добавить в корзину"),
+            BotCommand("cartlist", "Список в корзину"),
+            BotCommand("cartview", "Смотреть корзину сайта"),
+            BotCommand("cartlog", "Журнал: кто добавлял"),
         ]
     )
 
@@ -77,6 +79,7 @@ def build_application(config: BotConfig | None = None) -> Application:
 
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("menu", cmd_menu))
     app.add_handler(CommandHandler("check", cmd_check))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("cart", cmd_cart))

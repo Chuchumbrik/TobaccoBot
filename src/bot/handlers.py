@@ -9,14 +9,13 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from bot.config import BotConfig
 from bot.cart_log import entries_from_batch, get_cart_log
+from bot.config import BotConfig
 from bot.formatters import (
     format_cart_batch,
     format_cart_log,
-    format_check_result,
+    format_check_results,
     format_flavor_search,
-    format_help,
     format_site_cart,
 )
 from bot.keyboards import (
@@ -24,10 +23,11 @@ from bot.keyboards import (
     BTN_CART,
     BTN_CART_LIST,
     BTN_CART_LOG,
+    BTN_CHECK,
+    BTN_CHECK_LIST,
     BTN_HELP,
-    BTN_LIST,
+    BTN_MENU,
     BTN_SEARCH,
-    BTN_SINGLE,
     BTN_VIEW_CART,
     MENU_BUTTONS,
     main_menu_keyboard,
@@ -49,6 +49,7 @@ from bot.menu_state import (
     has_mode,
     set_mode,
 )
+from bot.messages import format_help_chunks, format_welcome
 from oshisha.auth import OshishaAuthError
 from oshisha.service import OshishaService
 
@@ -98,6 +99,25 @@ async def _reply(
     )
 
 
+async def _send_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    config = get_config(context)
+    user_id, _, _ = _user_snapshot(update)
+    chunks = format_help_chunks(
+        config,
+        user_id=user_id,
+        is_admin_log=_can_view_all_cart_log(config, user_id),
+    )
+    for i, chunk in enumerate(chunks):
+        suffix = f"\n\n<i>(справка {i + 1}/{len(chunks)})</i>" if len(chunks) > 1 else ""
+        await update.message.reply_text(
+            chunk + suffix,
+            parse_mode=ParseMode.HTML,
+            reply_markup=main_menu_keyboard() if i == len(chunks) - 1 else None,
+        )
+
+
 async def _prompt_flavor(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_FLAVOR)
     await _reply(update, PROMPT_FLAVOR)
@@ -111,11 +131,8 @@ async def _prompt_single(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def _prompt_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_LIST)
     config = get_config(context)
-    text = PROMPT_LIST.replace(
-        "минимум 2.",
-        f"минимум 2, максимум {config.check_list_max_lines}.",
-    )
-    await _reply(update, text)
+    extra = f"\n\n<i>Максимум {config.check_list_max_lines} строк за раз.</i>"
+    await _reply(update, PROMPT_LIST + extra)
 
 
 async def _prompt_cart_single(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -126,20 +143,23 @@ async def _prompt_cart_single(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def _prompt_cart_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     set_mode(context, MODE_CART_LIST)
     config = get_config(context)
-    text = (
-        f"{PROMPT_CART_LIST}\n<i>Максимум {config.check_list_max_lines} строк.</i>"
-    )
-    await _reply(update, text)
+    extra = f"\n\n<i>Максимум {config.check_list_max_lines} строк.</i>"
+    await _reply(update, PROMPT_CART_LIST + extra)
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     clear_mode(context)
-    await _reply(update, format_help())
+    await _reply(update, format_welcome())
+
+
+async def cmd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    clear_mode(context)
+    await _reply(update, format_welcome())
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     clear_mode(context)
-    await _reply(update, format_help())
+    await _send_help(update, context)
 
 
 async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -152,7 +172,6 @@ async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """ /check [строка] — проверка одной позиции """
     line = " ".join(context.args).strip() if context.args else ""
     if not line:
         await _prompt_single(update, context)
@@ -162,12 +181,10 @@ async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """ /list — ожидание многострочного списка """
     await _prompt_list(update, context)
 
 
 async def cmd_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """ /cart [строка] — добавить одну позицию в корзину """
     line = " ".join(context.args).strip() if context.args else ""
     if not line:
         await _prompt_cart_single(update, context)
@@ -177,7 +194,6 @@ async def cmd_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_cartlist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """ /cartlist — ожидание списка для корзины """
     await _prompt_cart_list(update, context)
 
 
@@ -217,19 +233,23 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if text == BTN_CANCEL:
         clear_mode(context)
-        await _reply(update, "Отменено. Выберите действие в меню.")
+        await _reply(update, "Шаг отменён.\n\n" + format_welcome())
+        return
+    if text == BTN_MENU:
+        clear_mode(context)
+        await _reply(update, format_welcome())
         return
     if text == BTN_HELP:
         clear_mode(context)
-        await _reply(update, format_help())
+        await _send_help(update, context)
         return
     if text == BTN_SEARCH:
         await _prompt_flavor(update, context)
         return
-    if text == BTN_SINGLE:
+    if text == BTN_CHECK:
         await _prompt_single(update, context)
         return
-    if text == BTN_LIST:
+    if text == BTN_CHECK_LIST:
         await _prompt_list(update, context)
         return
     if text == BTN_CART:
@@ -248,7 +268,6 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Ответ пользователя после выбора режима в меню."""
     if not update.message or not update.message.text:
         return
     if not has_mode(context):
@@ -261,7 +280,7 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
     mode = get_mode(context)
     if mode == MODE_FLAVOR:
         if not text:
-            await _reply(update, "Введите вкус и граммовку, например: <code>малина 200</code>")
+            await _reply(update, "Введите вкус, например: <code>малина 200</code>")
             return
         clear_mode(context)
         await _run_flavor_search(update, context, text)
@@ -271,8 +290,7 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
         if "\n" in text:
             await _reply(
                 update,
-                "Нужна <b>одна</b> строка. Лишние переводы строк уберите "
-                "или выберите «📝 Список позиций».",
+                "Нужна <b>одна</b> строка. Для списка — кнопка «📝 Список».",
             )
             return
         clear_mode(context)
@@ -283,16 +301,13 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         config = get_config(context)
         if len(lines) < 2:
-            await _reply(
-                update,
-                "Нужно минимум <b>2</b> строки. Каждая позиция — с новой строки.",
-            )
+            await _reply(update, "Нужно минимум <b>2</b> строки (каждая с новой строки).")
             return
         if len(lines) > config.check_list_max_lines:
             await _reply(
                 update,
                 f"Слишком много строк (макс. {config.check_list_max_lines}). "
-                "Разбейте на несколько сообщений.",
+                "Разбейте на части.",
             )
             return
         clear_mode(context)
@@ -303,7 +318,7 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
         if "\n" in text:
             await _reply(
                 update,
-                "Нужна <b>одна</b> строка или выберите «🛒 Список в корзину».",
+                "Одна строка — «🛒 Добавить». Несколько — «🛒 Список в корзину».",
             )
             return
         clear_mode(context)
@@ -327,7 +342,6 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def handle_idle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Текст без выбранного режима — подсказка, без автопроверки."""
     if not update.message or not update.message.text:
         return
     text = update.message.text.strip()
@@ -337,7 +351,6 @@ async def handle_idle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Ввод после кнопки или подсказка, если режим не выбран."""
     if has_mode(context):
         await handle_awaiting_input(update, context)
     else:
@@ -358,7 +371,7 @@ async def _run_single_check(
     try:
         results = get_service(context).check_list([line])
         await status.edit_text(
-            format_check_result(results[0]),
+            format_check_results(results),
             parse_mode=ParseMode.HTML,
         )
     except OshishaAuthError as exc:
@@ -381,8 +394,7 @@ async def _run_list_check(
     )
     try:
         results = get_service(context).check_list(lines)
-        chunks = [format_check_result(r) for r in results]
-        text = "\n\n".join(chunks)
+        text = format_check_results(results)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
         await status.edit_text(text, parse_mode=ParseMode.HTML)
@@ -400,7 +412,11 @@ async def _run_cart_add(
 ) -> None:
     if not update.message:
         return
-    label = "Добавляю в корзину…" if len(lines) == 1 else f"Добавляю {len(lines)} поз. в корзину…"
+    label = (
+        "Добавляю в корзину…"
+        if len(lines) == 1
+        else f"Добавляю {len(lines)} поз. в корзину…"
+    )
     status = await update.message.reply_text(
         label,
         reply_markup=main_menu_keyboard(),
@@ -419,8 +435,11 @@ async def _run_cart_add(
                     full_name=full_name,
                 )
             )
+        text = format_cart_batch(batch)
+        if len(text) > 4000:
+            text = text[:3990] + "\n…"
         await status.edit_text(
-            format_cart_batch(batch),
+            text,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )
@@ -498,8 +517,11 @@ async def _run_flavor_search(
             query,
             limit=config.flavor_search_limit,
         )
+        text = format_flavor_search(result)
+        if len(text) > 4000:
+            text = text[:3990] + "\n…"
         await status.edit_text(
-            format_flavor_search(result),
+            text,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )
