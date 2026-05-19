@@ -15,6 +15,7 @@ from bot.handlers import (
     cmd_cartlist,
     cmd_cartlog,
     cmd_cartview,
+    cmd_logreset,
     cmd_check,
     cmd_help,
     cmd_list,
@@ -47,6 +48,7 @@ async def _setup_bot_commands(application: Application) -> None:
             BotCommand("cartlist", "Список в корзину"),
             BotCommand("cartview", "Смотреть корзину сайта"),
             BotCommand("cartlog", "Журнал: кто добавлял"),
+            BotCommand("logreset", "Новый заказ в журнале"),
         ]
     )
 
@@ -86,6 +88,7 @@ def build_application(config: BotConfig | None = None) -> Application:
     app.add_handler(CommandHandler("cartlist", cmd_cartlist))
     app.add_handler(CommandHandler("cartview", cmd_cartview))
     app.add_handler(CommandHandler("cartlog", cmd_cartlog))
+    app.add_handler(CommandHandler("logreset", cmd_logreset))
     app.add_handler(CommandHandler(SEARCH_COMMANDS, cmd_search))
     app.add_handler(
         MessageHandler(

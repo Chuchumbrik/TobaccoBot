@@ -6,7 +6,7 @@ from oshisha.cart import CartAddBatchResult, CartAddResult, CartView
 from oshisha.catalog import ProductCheckResult
 from oshisha.flavor_search import FlavorSearchResult
 
-from bot.cart_log import CartLogEntry
+from bot.cart_log import CartLogEntry, CartLogState, format_session_started, format_ts_display
 from bot.messages import (
     HINT_AFTER_CART,
     HINT_AFTER_CHECK,
@@ -110,21 +110,35 @@ def format_cart_log(
     *,
     title: str,
     show_user: bool,
+    state: CartLogState | None = None,
 ) -> str:
+    header_lines = [f"<b>{_esc(title)}</b>"]
+    if state is not None:
+        header_lines.append(
+            f"<i>Заказ №{state.session_id} · начат {format_session_started(state)} (МСК)</i>"
+        )
+    header_lines.append("")
+
     if not entries:
-        return f"<b>{_esc(title)}</b>\n\nПока нет записей."
-    lines = [f"<b>{_esc(title)}</b>", ""]
+        header_lines.append("В этом заказе пока нет добавлений из бота.")
+        header_lines.append(
+            "\n<i>Чтобы начать новый заказ — кнопка «🔄 Новый заказ».</i>"
+        )
+        return "\n".join(header_lines)
+
+    lines = header_lines
     for entry in reversed(entries):
         icon = "✅" if entry.success else "❌"
-        ts = entry.ts.replace("T", " ").replace("Z", " UTC")
-        who = f" <i>{_esc(entry.display_user())}</i>" if show_user else ""
+        when = format_ts_display(entry.ts)
+        who = f" · <i>{_esc(entry.display_user())}</i>" if show_user else ""
         name = f"\n→ {_esc(entry.product_name)}" if entry.product_name else ""
         qty = f" ×{entry.quantity}" if entry.quantity > 1 else ""
         price = f", {entry.line_price} ₽" if entry.line_price else ""
         lines.append(
-            f"{icon} <code>{_esc(entry.query)}</code>{qty}{price}{name}\n"
-            f"<i>{ts}</i>{who} — {entry.message}"
+            f"{icon} <b>{when}</b>{who}\n"
+            f"<code>{_esc(entry.query)}</code>{qty}{price}{name}"
         )
+    lines.append("\n<i>🔄 Новый заказ — сброс журнала для следующего заказа.</i>")
     return "\n\n".join(lines)
 
 

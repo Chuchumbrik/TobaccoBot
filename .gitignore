@@ -7,6 +7,7 @@ __pycache__/
 .page.html
 data/sessions/
 data/cart_log.jsonl
+data/cart_log_state.json
 data/_cart_page.html
 data/_basket_ajax.json
 data/_probe_out.txt

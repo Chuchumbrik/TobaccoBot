@@ -9,7 +9,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from bot.cart_log import entries_from_batch, get_cart_log
+from bot.cart_log import entries_from_batch, format_session_started, get_cart_log
 from bot.config import BotConfig
 from bot.formatters import (
     format_cart_batch,
@@ -23,6 +23,7 @@ from bot.keyboards import (
     BTN_CART,
     BTN_CART_LIST,
     BTN_CART_LOG,
+    BTN_LOG_RESET,
     BTN_CHECK,
     BTN_CHECK_LIST,
     BTN_HELP,
@@ -207,6 +208,11 @@ async def cmd_cartlog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await _run_cart_log(update, context)
 
 
+async def cmd_logreset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    clear_mode(context)
+    await _run_log_reset(update, context)
+
+
 async def handle_cyrillic_search_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -265,6 +271,10 @@ async def handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if text == BTN_CART_LOG:
         clear_mode(context)
         await _run_cart_log(update, context)
+        return
+    if text == BTN_LOG_RESET:
+        clear_mode(context)
+        await _run_log_reset(update, context)
 
 
 async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -427,12 +437,14 @@ async def _run_cart_add(
         if user_id:
             config = get_config(context)
             log = get_cart_log(context, config.cart_log_path)
+            session_id = log.load_state().session_id
             log.append_entries(
                 entries_from_batch(
                     batch,
                     telegram_user_id=user_id,
                     username=username,
                     full_name=full_name,
+                    session_id=session_id,
                 )
             )
         text = format_cart_batch(batch)
@@ -478,16 +490,26 @@ async def _run_cart_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user_id, _, _ = _user_snapshot(update)
     show_all = _can_view_all_cart_log(config, user_id)
     log = get_cart_log(context, config.cart_log_path)
+    state = log.load_state()
     if show_all:
-        entries = log.read_recent(config.cart_log_display_limit)
-        title = "Журнал добавлений из бота"
+        entries = log.read_session(
+            state.session_id,
+            limit=config.cart_log_display_limit,
+        )
+        title = "Журнал текущего заказа"
     else:
-        entries = log.read_recent(
-            config.cart_log_display_limit,
+        entries = log.read_session(
+            state.session_id,
+            limit=config.cart_log_display_limit,
             telegram_user_id=user_id,
         )
-        title = "Ваши добавления в корзину"
-    text = format_cart_log(entries, title=title, show_user=show_all)
+        title = "Ваши добавления (текущий заказ)"
+    text = format_cart_log(
+        entries,
+        title=title,
+        show_user=show_all,
+        state=state,
+    )
     if len(text) > 4000:
         text = text[:3990] + "\n…"
     await update.message.reply_text(
@@ -495,6 +517,40 @@ async def _run_cart_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         parse_mode=ParseMode.HTML,
         reply_markup=main_menu_keyboard(),
         disable_web_page_preview=True,
+    )
+
+
+async def _run_log_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    config = get_config(context)
+    user_id, username, full_name = _user_snapshot(update)
+    if not _can_view_all_cart_log(config, user_id):
+        await _reply(
+            update,
+            "Начать новый заказ в журнале могут только администраторы бота "
+            "(см. <code>TELEGRAM_ADMIN_IDS</code> в .env).",
+        )
+        return
+
+    log = get_cart_log(context, config.cart_log_path)
+    prev = log.load_state()
+    prev_count = len(log.read_session(prev.session_id, limit=10_000))
+    state = log.start_new_session(
+        user_id=user_id,
+        username=username,
+        full_name=full_name,
+    )
+    who = f"@{username}" if username else (full_name or str(user_id))
+    await _reply(
+        update,
+        f"🔄 <b>Новый заказ №{state.session_id}</b>\n\n"
+        f"Предыдущий заказ №{prev.session_id} закрыт "
+        f"({prev_count} записей в журнале).\n"
+        f"Сейчас: <b>{format_session_started(state)}</b> (МСК)\n"
+        f"Инициатор: {who}\n\n"
+        "Новые добавления в «🛒 Добавить» попадут в этот заказ. "
+        "Смотреть — «📜 Журнал».",
     )
 
 
