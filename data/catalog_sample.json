@@ -1,0 +1,79 @@
+{
+  "url": "https://oshisha.cc/catalog/nash_1/",
+  "section_title": "Табак NАШ (НАШ) для кальяна купить оптом в Москве и МО в магазине кальянов Ошиша",
+  "count": 24,
+  "products": [
+    {
+      "id": "58352",
+      "name": "NАШ No Aroma Cigar с ароматом Корохо, 30гр.",
+      "url": "https://oshisha.cc/catalog/product/nash_no_aroma_cigar_s_aromatom_korokho_30gr/",
+      "can_buy": true,
+      "max_quantity": 78.0,
+      "price": 450.0,
+      "base_price": 450.0,
+      "currency": "RUB"
+    },
+    {
+      "id": "58351",
+      "name": "NАШ No Aroma Cigar с ароматом Т13, 30гр.",
+      "url": "https://oshisha.cc/catalog/product/nash_no_aroma_cigar_s_aromatom_t13_30gr/",
+      "can_buy": true,
+      "max_quantity": 78.0,
+      "price": 450.0,
+      "base_price": 450.0,
+      "currency": "RUB"
+    },
+    {
+      "id": "58350",
+      "name": "NАШ No Aroma Cigar с ароматом Кубита Колумбия, 30гр.",
+      "url": "https://oshisha.cc/catalog/product/nash_no_aroma_cigar_s_aromatom_kubita_kolumbiya_30gr/",
+      "can_buy": true,
+      "max_quantity": 78.0,
+      "price": 450.0,
+      "base_price": 450.0,
+      "currency": "RUB"
+    },
+    {
+      "id": "58349",
+      "name": "NАШ No Aroma Cigar с ароматом Пилото Кубано, 30гр.",
+      "url": "https://oshisha.cc/catalog/product/nash_no_aroma_cigar_s_aromatom_piloto_kubano_30gr/",
+      "can_buy": true,
+      "max_quantity": 78.0,
+      "price": 450.0,
+      "base_price": 450.0,
+      "currency": "RUB"
+    },
+    {
+      "id": "58348",
+      "name": "NАШ WHITE с ароматом Персик, манго, ягоды, холодок (Lady Secret), 200гр.",
+      "url": "https://oshisha.cc/catalog/product/nash_white_s_aromatom_persik_mango_yagody_kholodok_lady_secret_200gr/",
+      "can_buy": true,
+      "max_quantity": 35.0,
+      "price": 1500.0,
+      "base_price": 1500.0,
+      "currency": "RUB"
+    }
+  ],
+  "raw_product_keys": [
+    "BUY_ID",
+    "CAN_BUY",
+    "CHECK_QUANTITY",
+    "DETAIL_PAGE_URL",
+    "ID",
+    "ITEM_MEASURE_RATIOS",
+    "ITEM_MEASURE_RATIO_SELECTED",
+    "ITEM_PRICES",
+    "ITEM_PRICE_MODE",
+    "ITEM_PRICE_SELECTED",
+    "ITEM_QUANTITY_RANGES",
+    "ITEM_QUANTITY_RANGE_SELECTED",
+    "MAX_QUANTITY",
+    "MORE_PHOTO",
+    "MORE_PHOTO_COUNT",
+    "NAME",
+    "PICT",
+    "QUANTITY_ACTUAL",
+    "QUANTITY_FLOAT",
+    "STEP_QUANTITY"
+  ]
+}

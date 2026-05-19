@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.cookies.txt
+.page.html
+data/sessions/
+data/vocab/cache/
+data/vocab/generated/

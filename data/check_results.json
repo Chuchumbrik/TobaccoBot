@@ -1,0 +1,266 @@
+[
+  {
+    "query": "Сарма - деревенская вишня 200 3х",
+    "status": "есть",
+    "matched_name": "САРМА с ароматом Деревенская Вишня, 200 гр.",
+    "product_id": "49946",
+    "url": "https://oshisha.cc/catalog/product/tabak_dlya_kalyana_sarma_derevenskaya_vishnya_200gr/",
+    "price": 1530.0,
+    "max_quantity": 180.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "САРМА",
+      "flavors": [
+        "sarma_country_cherry"
+      ],
+      "weight_g": 200,
+      "pack_count": 3,
+      "summary": "бренд=САРМА, вкусы=sarma_country_cherry, 200г, ×3"
+    },
+    "pack_count": 3,
+    "requested_weight_g": 200,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "Сарма малина 200",
+    "status": "есть",
+    "matched_name": "САРМА 360 Крепкая с ароматом Малина-Вишня, 200 гр.",
+    "product_id": "50288",
+    "url": "https://oshisha.cc/catalog/product/tabak_dlya_kalyana_sarma_360_krepkaya_malina_vishnya_200gr/",
+    "price": 1530.0,
+    "max_quantity": 113.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "САРМА",
+      "flavors": [
+        "sarma_raspberry"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "бренд=САРМА, вкусы=sarma_raspberry, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 200,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "База масло",
+    "status": "есть",
+    "matched_name": "База Полегче с ароматом Сливочное масло (Butter), 250гр.",
+    "product_id": "57786",
+    "url": "https://oshisha.cc/catalog/product/baza_polegche_s_aromatom_slivochnoe_maslo_butter_250gr/",
+    "price": 1430.0,
+    "max_quantity": 42.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "База",
+      "flavors": [
+        "base_butter"
+      ],
+      "weight_g": null,
+      "pack_count": 1,
+      "summary": "бренд=База, вкусы=base_butter"
+    },
+    "pack_count": 1,
+    "requested_weight_g": null,
+    "matched_weight_g": 250
+  },
+  {
+    "query": "Сноблес - пломбир",
+    "status": "нет",
+    "matched_name": "Burn BLACK Almond icecream 200гр",
+    "product_id": "23536",
+    "url": "https://oshisha.cc/catalog/product/burn_black_almond_icecream_200gr_mrk/",
+    "price": 1550.0,
+    "max_quantity": 0.0,
+    "match_score": 0.865,
+    "parsed": {
+      "brand": "Сноблес",
+      "flavors": [
+        "plombir"
+      ],
+      "weight_g": null,
+      "pack_count": 1,
+      "summary": "бренд=Сноблес, вкусы=plombir"
+    },
+    "pack_count": 1,
+    "requested_weight_g": null,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "Бб - пудинг",
+    "status": "нет",
+    "matched_name": "BlackBurn Пудинг (Pudding), 200гр.",
+    "product_id": "44593",
+    "url": "https://oshisha.cc/catalog/product/burn_black_pudding_200gr/",
+    "price": 1550.0,
+    "max_quantity": 0.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "BlackBurn",
+      "flavors": [
+        "bb_pudding"
+      ],
+      "weight_g": null,
+      "pack_count": 1,
+      "summary": "бренд=BlackBurn, вкусы=bb_pudding"
+    },
+    "pack_count": 1,
+    "requested_weight_g": null,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "бб - мармелад кола 200 х2",
+    "status": "есть",
+    "matched_name": "BlackBurn Мармелад с колой (Haribon), 200гр.",
+    "product_id": "21996",
+    "url": "https://oshisha.cc/catalog/product/burn_black_haribon_200gr_mrk/",
+    "price": 1550.0,
+    "max_quantity": 363.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "BlackBurn",
+      "flavors": [
+        "bb_haribon"
+      ],
+      "weight_g": 200,
+      "pack_count": 2,
+      "summary": "бренд=BlackBurn, вкусы=bb_haribon, 200г, ×2"
+    },
+    "pack_count": 2,
+    "requested_weight_g": 200,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "бб - клубничный джем 200",
+    "status": "нет",
+    "matched_name": "BlackBurn Клубничный джем (Strawberry Jam), 100гр.",
+    "product_id": "21256",
+    "url": "https://oshisha.cc/catalog/product/burn_black_strawberry_jam_100gr_mrk/",
+    "price": 800.0,
+    "max_quantity": 0.0,
+    "match_score": 0.72,
+    "parsed": {
+      "brand": "BlackBurn",
+      "flavors": [
+        "bb_strawberry_jam"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "бренд=BlackBurn, вкусы=bb_strawberry_jam, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 200,
+    "matched_weight_g": 100
+  },
+  {
+    "query": "Deus - love is 200гр",
+    "status": "есть",
+    "matched_name": "Deus с ароматом Клубнично-Банановая Жвачка (Love Is), 100гр.",
+    "product_id": "47429",
+    "url": "https://oshisha.cc/catalog/product/deus_love_is_100gr/",
+    "price": 730.0,
+    "max_quantity": 32.0,
+    "match_score": 0.72,
+    "parsed": {
+      "brand": "Deus",
+      "flavors": [
+        "deus_love_is"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "бренд=Deus, вкусы=deus_love_is, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 200,
+    "matched_weight_g": 100
+  },
+  {
+    "query": "Must Have - кокос  125",
+    "status": "нет",
+    "matched_name": "MustHave Undercoal с ароматом кокосового шейка, 125 гр.",
+    "product_id": "18962",
+    "url": "https://oshisha.cc/catalog/product/musthave_mark_coconut_shake_125gr/",
+    "price": 897.0,
+    "max_quantity": 0.0,
+    "match_score": 0.936,
+    "parsed": {
+      "brand": "MustHave",
+      "flavors": [
+        "mh_coconut"
+      ],
+      "weight_g": 125,
+      "pack_count": 1,
+      "summary": "бренд=MustHave, вкусы=mh_coconut, 125г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 125,
+    "matched_weight_g": 125
+  },
+  {
+    "query": "Бб - черешневый сок 200гр",
+    "status": "не найден",
+    "matched_name": null,
+    "product_id": null,
+    "url": null,
+    "price": null,
+    "max_quantity": null,
+    "match_score": 0.4527272727272727,
+    "parsed": {
+      "brand": "BlackBurn",
+      "flavors": [
+        "bb_cherry_garden"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "бренд=BlackBurn, вкусы=bb_cherry_garden, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": null,
+    "matched_weight_g": null
+  },
+  {
+    "query": "Бб персиковый йогурт 200гр",
+    "status": "есть",
+    "matched_name": "BlackBurn Персиковый йогурт (Peach Yogurt), 200гр.",
+    "product_id": "44592",
+    "url": "https://oshisha.cc/catalog/product/burn_black_peach_yogurt_200gr/",
+    "price": 1550.0,
+    "max_quantity": 640.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": "BlackBurn",
+      "flavors": [
+        "bb_peach_yogurt"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "бренд=BlackBurn, вкусы=bb_peach_yogurt, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 200,
+    "matched_weight_g": 200
+  },
+  {
+    "query": "Арбуз-дыня 200гр",
+    "status": "есть",
+    "matched_name": "NАШ WHITE с ароматом Арбуз дыня, 200гр.",
+    "product_id": "56033",
+    "url": "https://oshisha.cc/catalog/product/nash_white_arbuz_dynya_200gr/",
+    "price": 1500.0,
+    "max_quantity": 4.0,
+    "match_score": 1.0,
+    "parsed": {
+      "brand": null,
+      "flavors": [
+        "watermelon_melon"
+      ],
+      "weight_g": 200,
+      "pack_count": 1,
+      "summary": "вкусы=watermelon_melon, 200г"
+    },
+    "pack_count": 1,
+    "requested_weight_g": 200,
+    "matched_weight_g": 200
+  }
+]

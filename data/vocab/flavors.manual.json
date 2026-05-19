@@ -1,0 +1,20 @@
+{
+  "bb_haribon": {
+    "aliases": ["мармелад кола", "мармелад с колой", "харибон", "харибо"],
+    "search_hints": ["BlackBurn Haribon", "мармелад с колой BlackBurn"]
+  },
+  "bb_strawberry_jam": {
+    "aliases": ["клубничный джем", "клуб джем", "клубнич"],
+    "search_hints": ["BlackBurn клубнич", "Strawberry Jam"]
+  },
+  "bb_cherry_garden": {
+    "aliases": ["черешневый сок", "cherry garden", "чери гарден"],
+    "search_hints": ["BlackBurn Cherry Garden", "BlackBurn черешневый"]
+  },
+  "sarma_country_cherry": {
+    "search_hints": ["САРМА деревенская вишня"]
+  },
+  "sarma_raspberry": {
+    "search_hints": ["САРМА лесная малина", "САРМА малина"]
+  }
+}

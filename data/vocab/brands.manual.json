@@ -1,0 +1,25 @@
+{
+  "blackburn": {
+    "display": "BlackBurn",
+    "catalog_section": "/catalog/burn_black/",
+    "site_names": ["BlackBurn", "Burn BLACK"],
+    "aliases": [
+      "бб", "б б", "bb", "б.б", "blackburn", "black burn", "burn black",
+      "блэк берн", "блэкберн", "блек берн"
+    ]
+  },
+  "sarma": {
+    "display": "САРМА",
+    "aliases": ["сарма", "sarma", "сарму"]
+  },
+  "musthave": {
+    "display": "MustHave",
+    "aliases": ["must have", "musthave", "мах", "mh", "маст хев"]
+  },
+  "snobless": {
+    "display": "Сноблес",
+    "catalog_section": "/catalog/burn_black/",
+    "site_names": ["Burn BLACK"],
+    "aliases": ["сноблес", "snobless", "сноблесс", "snowless"]
+  }
+}
