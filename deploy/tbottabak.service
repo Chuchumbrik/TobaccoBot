@@ -1,0 +1,16 @@
+[Unit]
+Description=TobaccoBot Telegram bot (oshisha.cc)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/TobaccoBot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/TobaccoBot/.venv/bin/python /root/TobaccoBot/scripts/run_bot.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
