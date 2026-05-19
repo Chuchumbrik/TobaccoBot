@@ -9,6 +9,8 @@ MODE_KEY = "await_mode"
 MODE_FLAVOR = "flavor"
 MODE_SINGLE = "single"
 MODE_LIST = "list"
+MODE_CART_SINGLE = "cart_single"
+MODE_CART_LIST = "cart_list"
 
 
 def set_mode(context: ContextTypes.DEFAULT_TYPE, mode: str) -> None:
@@ -54,9 +56,25 @@ PROMPT_LIST = (
     "Отмена — кнопка «↩️ Отмена»."
 )
 
+PROMPT_CART_SINGLE = (
+    "🛒 <b>В корзину — одна позиция</b>\n\n"
+    "Отправьте строку как при проверке, например:\n"
+    "• <code>66 мармелад кола 200</code>\n"
+    "• <code>сарма малина 200 3х</code> — три упаковки\n\n"
+    "Добавляется лучшее совпадение с сайта (нужен вход в Oshisha).\n"
+    "Отмена — «↩️ Отмена»."
+)
+
+PROMPT_CART_LIST = (
+    "🛒 <b>В корзину — список</b>\n\n"
+    "Несколько строк в одном сообщении (минимум 2), "
+    "как для проверки списка.\n\n"
+    "Отмена — «↩️ Отмена»."
+)
+
 PROMPT_IDLE = (
     "Выберите действие кнопкой внизу или командой:\n"
     "• <code>/search</code> — поиск по вкусу\n"
-    "• <code>/check</code> — одна позиция\n"
-    "• <code>/list</code> — список позиций"
+    "• <code>/check</code> / <code>/list</code> — проверка\n"
+    "• <code>/cart</code> / <code>/cartlist</code> — в корзину"
 )

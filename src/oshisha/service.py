@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from .auth import OshishaAuth, OshishaAuthError
+from .cart import CartAddBatchResult, OshishaCart
 from .catalog import OshishaCatalog, ProductCheckResult
 from .flavor_search import FlavorSearchResult, search_by_flavor
 
@@ -47,6 +48,13 @@ class OshishaService:
     def check_list(self, lines: list[str]) -> list[ProductCheckResult]:
         catalog = self._ensure_login()
         return catalog.check_products(lines)
+
+    def add_to_cart(self, lines: list[str]) -> CartAddBatchResult:
+        """Найти позиции по строкам и добавить в корзину на сайте."""
+        catalog = self._ensure_login()
+        if self._auth is None:
+            raise OshishaAuthError("Сессия не инициализирована")
+        return OshishaCart(self._auth).add_queries(catalog, lines)
 
     def search_flavor(
         self,

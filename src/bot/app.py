@@ -11,6 +11,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot.config import BotConfig, load_config
 from bot.handlers import (
     CONFIG_KEY,
+    cmd_cart,
+    cmd_cartlist,
     cmd_check,
     cmd_help,
     cmd_list,
@@ -35,6 +37,8 @@ async def _setup_bot_commands(application: Application) -> None:
             BotCommand("search", "Поиск по вкусу"),
             BotCommand("check", "Проверка одной позиции"),
             BotCommand("list", "Проверка списка"),
+            BotCommand("cart", "В корзину — одна позиция"),
+            BotCommand("cartlist", "В корзину — список"),
             BotCommand("start", "Меню и справка"),
             BotCommand("help", "Справка"),
         ]
@@ -71,6 +75,8 @@ def build_application(config: BotConfig | None = None) -> Application:
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("check", cmd_check))
     app.add_handler(CommandHandler("list", cmd_list))
+    app.add_handler(CommandHandler("cart", cmd_cart))
+    app.add_handler(CommandHandler("cartlist", cmd_cartlist))
     app.add_handler(CommandHandler(SEARCH_COMMANDS, cmd_search))
     app.add_handler(
         MessageHandler(
