@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import re
 
-from telegram import Update
+from telegram import Message, Update
 from telegram.constants import ParseMode
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from bot.cart_log import entries_from_batch, format_session_started, get_cart_log
@@ -83,6 +84,46 @@ def _can_view_all_cart_log(config: BotConfig, user_id: int) -> bool:
     if not config.telegram_admin_ids:
         return True
     return user_id in config.telegram_admin_ids
+
+
+async def _send_status(update: Update, text: str) -> Message | None:
+    """Промежуточное сообщение без клавиатуры — его можно редактировать."""
+    if not update.message:
+        return None
+    return await update.message.reply_text(text)
+
+
+async def _finish_status(
+    status: Message | None,
+    update: Update,
+    text: str,
+    *,
+    parse_mode: str | None = ParseMode.HTML,
+    disable_web_page_preview: bool = False,
+) -> None:
+    """Заменить «Проверяю…» на результат; при ошибке edit — новое сообщение."""
+    kwargs: dict = {"reply_markup": main_menu_keyboard()}
+    if parse_mode is not None:
+        kwargs["parse_mode"] = parse_mode
+    if disable_web_page_preview:
+        kwargs["disable_web_page_preview"] = True
+
+    if status is None:
+        if update.message:
+            await update.message.reply_text(text, **kwargs)
+        return
+
+    try:
+        await status.edit_text(text, **kwargs)
+    except BadRequest as exc:
+        err = str(exc).lower()
+        if "message is not modified" in err:
+            return
+        if "can't be edited" in err or "message to edit not found" in err:
+            if update.message:
+                await update.message.reply_text(text, **kwargs)
+            return
+        raise
 
 
 async def _reply(
@@ -374,21 +415,17 @@ async def _run_single_check(
 ) -> None:
     if not update.message:
         return
-    status = await update.message.reply_text(
-        "Проверяю…",
-        reply_markup=main_menu_keyboard(),
-    )
+    status = await _send_status(update, "Проверяю…")
     try:
         results = get_service(context).check_list([line])
-        await status.edit_text(
-            format_check_results(results),
-            parse_mode=ParseMode.HTML,
+        await _finish_status(
+            status, update, format_check_results(results), parse_mode=ParseMode.HTML
         )
     except OshishaAuthError as exc:
-        await status.edit_text(f"Ошибка входа: {exc}")
+        await _finish_status(status, update, f"Ошибка входа: {exc}", parse_mode=None)
     except Exception:
         logger.exception("single check failed")
-        await status.edit_text("Ошибка при проверке.")
+        await _finish_status(status, update, "Ошибка при проверке.", parse_mode=None)
 
 
 async def _run_list_check(
@@ -398,21 +435,18 @@ async def _run_list_check(
 ) -> None:
     if not update.message:
         return
-    status = await update.message.reply_text(
-        f"Проверяю {len(lines)} позиций…",
-        reply_markup=main_menu_keyboard(),
-    )
+    status = await _send_status(update, f"Проверяю {len(lines)} позиций…")
     try:
         results = get_service(context).check_list(lines)
         text = format_check_results(results)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
-        await status.edit_text(text, parse_mode=ParseMode.HTML)
+        await _finish_status(status, update, text, parse_mode=ParseMode.HTML)
     except OshishaAuthError as exc:
-        await status.edit_text(f"Ошибка входа на Oshisha: {exc}")
+        await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
     except Exception:
         logger.exception("check_list failed")
-        await status.edit_text("Ошибка при проверке списка.")
+        await _finish_status(status, update, "Ошибка при проверке списка.", parse_mode=None)
 
 
 async def _run_cart_add(
@@ -427,10 +461,7 @@ async def _run_cart_add(
         if len(lines) == 1
         else f"Добавляю {len(lines)} поз. в корзину…"
     )
-    status = await update.message.reply_text(
-        label,
-        reply_markup=main_menu_keyboard(),
-    )
+    status = await _send_status(update, label)
     try:
         batch = get_service(context).add_to_cart(lines)
         user_id, username, full_name = _user_snapshot(update)
@@ -450,37 +481,40 @@ async def _run_cart_add(
         text = format_cart_batch(batch)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
-        await status.edit_text(
+        await _finish_status(
+            status,
+            update,
             text,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )
     except OshishaAuthError as exc:
-        await status.edit_text(f"Ошибка входа на Oshisha: {exc}")
+        await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
     except Exception:
         logger.exception("add_to_cart failed")
-        await status.edit_text("Ошибка при добавлении в корзину.")
+        await _finish_status(
+            status, update, "Ошибка при добавлении в корзину.", parse_mode=None
+        )
 
 
 async def _run_cart_view(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
-    status = await update.message.reply_text(
-        "Загружаю корзину с сайта…",
-        reply_markup=main_menu_keyboard(),
-    )
+    status = await _send_status(update, "Загружаю корзину с сайта…")
     try:
         cart = get_service(context).view_cart()
-        await status.edit_text(
+        await _finish_status(
+            status,
+            update,
             format_site_cart(cart),
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )
     except OshishaAuthError as exc:
-        await status.edit_text(f"Ошибка входа на Oshisha: {exc}")
+        await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
     except Exception:
         logger.exception("view_cart failed")
-        await status.edit_text("Не удалось загрузить корзину.")
+        await _finish_status(status, update, "Не удалось загрузить корзину.", parse_mode=None)
 
 
 async def _run_cart_log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -563,10 +597,7 @@ async def _run_flavor_search(
         return
 
     config = get_config(context)
-    status = await update.message.reply_text(
-        f"Ищу «{query}»…",
-        reply_markup=main_menu_keyboard(),
-    )
+    status = await _send_status(update, f"Ищу «{query}»…")
 
     try:
         result = get_service(context).search_flavor(
@@ -576,13 +607,17 @@ async def _run_flavor_search(
         text = format_flavor_search(result)
         if len(text) > 4000:
             text = text[:3990] + "\n…"
-        await status.edit_text(
+        await _finish_status(
+            status,
+            update,
             text,
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True,
         )
     except OshishaAuthError as exc:
-        await status.edit_text(f"Ошибка входа на Oshisha: {exc}")
+        await _finish_status(status, update, f"Ошибка входа на Oshisha: {exc}", parse_mode=None)
     except Exception:
         logger.exception("flavor search failed for %r", query)
-        await status.edit_text("Ошибка при поиске. Попробуйте позже.")
+        await _finish_status(
+            status, update, "Ошибка при поиске. Попробуйте позже.", parse_mode=None
+        )
