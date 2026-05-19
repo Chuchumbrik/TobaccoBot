@@ -13,3 +13,5 @@ python scripts/run_bot.py
 ```
 
 Проверка доступа к Telegram API: `python scripts/check_telegram.py`.
+
+В Telegram: `/start` — кнопки меню (поиск, одна позиция, список).

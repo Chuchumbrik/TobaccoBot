@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from telegram import BotCommand
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -10,28 +11,31 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot.config import BotConfig, load_config
 from bot.handlers import (
     CONFIG_KEY,
+    cmd_check,
     cmd_help,
+    cmd_list,
     cmd_search,
     cmd_start,
-    handle_check_list,
     handle_cyrillic_search_command,
-    handle_flavor_prefix,
-    handle_single_line,
+    handle_menu_button,
+    handle_text_message,
 )
+from bot.keyboards import MENU_BUTTONS
 
-# Telegram: только a-z, цифры, _ (кириллица — через handle_cyrillic_search_command)
 SEARCH_COMMANDS = ["search", "poisk", "vkus", "flavor", "v"]
 
 logger = logging.getLogger(__name__)
 
+_MENU_PATTERN = "^(" + "|".join(re.escape(b) for b in MENU_BUTTONS) + ")$"
+
 
 async def _setup_bot_commands(application: Application) -> None:
-    """Меню команд в Telegram (кнопка «/» у поля ввода)."""
     await application.bot.set_my_commands(
         [
-            BotCommand("search", "Поиск по вкусу — например: малина 200"),
-            BotCommand("poisk", "То же, что /search"),
-            BotCommand("start", "Справка и примеры"),
+            BotCommand("search", "Поиск по вкусу"),
+            BotCommand("check", "Проверка одной позиции"),
+            BotCommand("list", "Проверка списка"),
+            BotCommand("start", "Меню и справка"),
             BotCommand("help", "Справка"),
         ]
     )
@@ -65,6 +69,8 @@ def build_application(config: BotConfig | None = None) -> Application:
 
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("check", cmd_check))
+    app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler(SEARCH_COMMANDS, cmd_search))
     app.add_handler(
         MessageHandler(
@@ -72,15 +78,9 @@ def build_application(config: BotConfig | None = None) -> Application:
             handle_cyrillic_search_command,
         )
     )
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT
-            & filters.Regex(r"(?i)^(вкус|flavor|поиск|search)[\s:]"),
-            handle_flavor_prefix,
-        )
-    )
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_check_list))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_single_line))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(_MENU_PATTERN), handle_menu_button))
+
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 
     return app
 
