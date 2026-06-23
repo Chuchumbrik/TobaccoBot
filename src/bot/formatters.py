@@ -39,7 +39,7 @@ def _compact_name(base_name: str, brand_display: str | None = None) -> str:
 
 def format_check_result(r: ProductCheckResult) -> str:
     if r.status == "не найден":
-        return f"❓ {r.query} — не найден"
+        return f"❓ <b>{_esc(r.query)}</b> — у поставщика такого табака нет"
 
     weight_mismatch = bool(
         r.requested_weight_g
@@ -50,7 +50,12 @@ def format_check_result(r: ProductCheckResult) -> str:
         icon = "⚠️" if weight_mismatch else "✅"
     else:
         icon = "❌"
-    status_text = "только другая фасовка" if weight_mismatch and r.status == "есть" else r.status
+    if weight_mismatch and r.status == "есть":
+        status_text = "только другая фасовка"
+    elif r.status == "нет":
+        status_text = "нет в наличии"
+    else:
+        status_text = r.status
     parts = [f"{icon} <b>{_esc(r.query)}</b> — {status_text}"]
     if weight_mismatch:
         parts.append(f" (запрошено {r.requested_weight_g}г, на сайте {r.matched_weight_g}г)")
