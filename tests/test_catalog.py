@@ -84,3 +84,31 @@ class TestColorConflictPenalty:
         product = _make_product("Bonche с ароматом Красная смородина (Red Currant), 60гр.")
         score = score_product_match(parsed, product, vocab)
         assert score < 0.48, f"ожидали score<0.48, получили {score:.3f}"
+
+
+class TestBrandPenaltyUnknownBrands:
+    """Регрессия: «Догма Персик» не должна матчить Trofimoff's."""
+
+    def test_dogma_peach_does_not_match_trofimoff(self):
+        vocab = get_vocabulary()
+        parsed = parse_query("Догма Персик", vocab)
+        product = _make_product('Trofimoff"s Burley с ароматом Персик(Peche), 25 гр.')
+        score = score_product_match(parsed, product, vocab)
+        assert score < 0.48, f"ожидали score<0.48, получили {score:.3f}"
+
+    def test_darkside_pomelo_does_not_match_chabacco(self):
+        vocab = get_vocabulary()
+        parsed = parse_query("Дарк сайд Помело", vocab)
+        product = _make_product("Chabacco Medium с ароматом Помело (Pomelo), 40гр.")
+        score = score_product_match(parsed, product, vocab)
+        assert score < 0.48, f"ожидали score<0.48, получили {score:.3f}"
+
+    def test_dogma_brand_recognized(self):
+        vocab = get_vocabulary()
+        parsed = parse_query("Догма Персик", vocab)
+        assert parsed.brand_key == "dogma", f"ожидали brand_key='dogma', получили {parsed.brand_key!r}"
+
+    def test_darkside_brand_recognized(self):
+        vocab = get_vocabulary()
+        parsed = parse_query("Дарк сайд Помело", vocab)
+        assert parsed.brand_key == "darkside", f"ожидали brand_key='darkside', получили {parsed.brand_key!r}"

@@ -99,6 +99,16 @@
     "aliases": ["энергетика"]
   },
 
+  "_section_dogma": "=== Dogma специфические вкусы ===",
+
+  "dogma_for_her": {
+    "display": "Для неё",
+    "aliases": ["для нее", "для неё", "for her", "фор хер", "для неё табак"],
+    "site_terms": ["Для неё", "Для нее", "For Her"],
+    "search_hints": ["DOGMA Для неё", "DOGMA For Her"],
+    "brands": ["dogma"]
+  },
+
   "_section_palitra": "=== Palitra специфические вкусы ===",
 
   "palitra_double_frost": {
@@ -110,6 +120,22 @@
   },
 
   "_section_universal": "=== Универсальные ключи — покрывают все бренды ===",
+
+  "_u_blood_orange": "Красный апельсин / Blood Orange",
+  "blood_orange": {
+    "display": "Красный апельсин",
+    "aliases": ["красный апельсин", "blood orange", "red orange", "кровавый апельсин", "блад оранж", "красн апельсин"],
+    "site_terms": ["Blood Orange", "Красный Апельсин", "Red Orange"],
+    "search_hints": []
+  },
+
+  "_u_provencal_herbs": "Прованские травы / Provencal Herbs",
+  "provencal_herbs": {
+    "display": "Прованские травы",
+    "aliases": ["прованские травы", "провансальские травы", "провансal herbs", "herbes de provence", "прованс травы"],
+    "site_terms": ["Прованские травы", "Провансальские травы", "Herbes de Provence"],
+    "search_hints": []
+  },
 
   "_u_skittles": "Скитлз / Skittles",
   "skittles": {

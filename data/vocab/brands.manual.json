@@ -102,5 +102,23 @@
   "trofimov": {
     "display": "Trofimoff's",
     "aliases": ["trofimov", "trofimoff s", "trofimoffs", "троф", "трофимоф", "трофимов", "trof"]
+  },
+
+  "dogma": {
+    "display": "DOGMA",
+    "site_names": ["DOGMA"],
+    "aliases": ["dogma", "догма", "dogmy", "dogme"]
+  },
+
+  "darkside": {
+    "display": "Darkside",
+    "site_names": ["Darkside"],
+    "aliases": ["darkside", "dark side", "дарк сайд", "дарксайд", "дарк", "ds"]
+  },
+
+  "antagonist": {
+    "display": "Антагонист",
+    "site_names": ["Антагонист", "Antagonist"],
+    "aliases": ["антагонист", "antagonist", "antag"]
   }
 }
