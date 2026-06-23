@@ -122,6 +122,26 @@ def _parse_brand_structured_list(text: str) -> list[str]:
     return out
 
 
+def _looks_like_check_list(text: str) -> bool:
+    """True если текст — многострочный список позиций с заголовками брендов.
+
+    Критерий: есть хотя бы одна строка «Бренд:» И после парсинга ≥ 2 строки.
+    Это отличает «Догма:\nПерсик» от обычного текста-запроса советнику.
+    """
+    if "\n" not in text:
+        return False
+    has_brand_header = any(
+        ln.strip().endswith(":")
+        and not _SEPARATOR_RE.fullmatch(ln.strip())
+        and ln.strip()[:-1].strip()
+        and ln.strip()[:-1].strip().lower() not in _CATEGORY_WORDS
+        for ln in text.splitlines()
+    )
+    if not has_brand_header:
+        return False
+    return len(_parse_brand_structured_list(text)) >= 2
+
+
 # ── Детектор приветствий ─────────────────────────────────────────────────────
 
 _GREETING_WORDS: frozenset[str] = frozenset([
@@ -454,6 +474,15 @@ async def handle_idle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             reply_markup=welcome_keyboard(compare=is_compare_enabled(context)),
         )
         return
+
+    # Структурированный список «Бренд:\nАромат» — сразу в проверку наличия
+    if _looks_like_check_list(text):
+        lines = _parse_brand_structured_list(text)
+        config = get_config(context)
+        if len(lines) <= config.check_list_max_lines:
+            await log_query(update, text=text, intent="check")
+            await _run_list_check(update, context, lines)
+            return
 
     # Свежий микс-запрос — всегда в приоритете, независимо от контекста
     if _looks_like_mix(text):

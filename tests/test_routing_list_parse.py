@@ -90,3 +90,30 @@ class TestParseBrandStructuredList:
     def test_empty_lines_skipped(self):
         text = "Малина\n\n\nКлубника"
         assert _parse_brand_structured_list(text) == ["Малина", "Клубника"]
+
+
+class TestLooksLikeCheckList:
+    from bot.handlers.routing import _looks_like_check_list
+
+    def _check(self, text):
+        from bot.handlers.routing import _looks_like_check_list
+        return _looks_like_check_list(text)
+
+    def test_brand_structured_is_list(self):
+        text = "Догма:\nПерсик 160гр\nДля нее 80гр\n___\nДарк сайд:\nПомело"
+        assert self._check(text) is True
+
+    def test_single_line_is_not_list(self):
+        assert self._check("Малина 200гр") is False
+
+    def test_two_line_no_brand_is_not_list(self):
+        # без заголовка бренда — не список
+        assert self._check("Малина\nКлубника") is False
+
+    def test_advise_multiline_is_not_list(self):
+        # многострочный запрос советнику — не список
+        assert self._check("хочу что-то сладкое\nно без мяты\nи лёгкое") is False
+
+    def test_category_word_header_not_brand(self):
+        # «Табак:» — категорийное слово, не бренд
+        assert self._check("Табак:\nМалина\nКлубника") is False
