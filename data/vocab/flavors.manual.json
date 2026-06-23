@@ -125,8 +125,8 @@
   "blood_orange": {
     "display": "Красный апельсин",
     "aliases": ["красный апельсин", "blood orange", "red orange", "кровавый апельсин", "блад оранж", "красн апельсин"],
-    "site_terms": ["Blood Orange", "Красный Апельсин", "Red Orange"],
-    "search_hints": []
+    "site_terms": ["Red Orange", "Blood Orange", "Красный Апельсин"],
+    "search_hints": ["BlackBurn Red Orange"]
   },
 
   "_u_provencal_herbs": "Прованские травы / Provencal Herbs",
