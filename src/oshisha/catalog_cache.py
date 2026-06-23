@@ -14,7 +14,9 @@ from typing import TYPE_CHECKING
 from .catalog import (
     CatalogProduct,
     ProductCheckResult,
+    WeightVariant,
     find_best_match,
+    find_weight_variants,
     is_in_stock,
     parse_query,
     _check_candidates,
@@ -228,6 +230,7 @@ def _product_check_result(
     parsed: ParsedQuery,
     product: CatalogProduct,
     score: float,
+    all_products: list[CatalogProduct] | None = None,
 ) -> ProductCheckResult:
     parsed_info = {
         "brand": parsed.brand_display,
@@ -240,6 +243,7 @@ def _product_check_result(
     matched_w = _weight_in_name(product.name)
     req_w = parsed.weight_grams
     status = "есть" if in_stock else "нет"
+    variants = find_weight_variants(product, all_products) if all_products else []
     return ProductCheckResult(
         query=query,
         status=status,
@@ -253,6 +257,7 @@ def _product_check_result(
         pack_count=parsed.pack_count,
         requested_weight_g=req_w,
         matched_weight_g=matched_w,
+        weight_variants=variants,
     )
 
 
@@ -274,7 +279,7 @@ def check_product_snapshot(
     )
     if product is None or score < _live_fallback_min_score():
         return None
-    return _product_check_result(query, parsed, product, score)
+    return _product_check_result(query, parsed, product, score, all_products=snap.products)
 
 
 def search_flavor_cached(

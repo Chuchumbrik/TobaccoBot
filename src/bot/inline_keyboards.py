@@ -18,6 +18,8 @@ CB_FLAVOR_GROUP = "sc:fgrp:"     # + group_index — выбор граммовк
 CB_CHECK_PICK = "sc:cp:"
 CB_CHECK_CONFIRM = "sc:cc:"
 CB_CHECK_ALL = "sc:call"         # Добавить все позиции в наличии из проверки списка
+CB_CHECK_MIN_WEIGHT = "sc:cmin"  # Добавить все по минимальной граммовке
+CB_CHECK_MAX_WEIGHT = "sc:cmax"  # Добавить все по максимальной граммовке
 CB_BACK_FLAVOR = "sc:bf"
 CB_BACK_CHECK = "sc:bc"
 CB_ADVISE_REFINE = "sc:advref"   # Уточнить рекомендацию советника
@@ -217,6 +219,11 @@ def flavor_confirm_keyboard(index: int) -> InlineKeyboardMarkup:
     )
 
 
+def _has_multi_weight_variants(results: list[ProductCheckResult]) -> bool:
+    """True если хотя бы один результат имеет ≥2 варианта граммовки."""
+    return any(len(r.weight_variants) >= 2 for r in results if r.status != "не найден")
+
+
 def check_results_keyboard(results: list[ProductCheckResult]) -> InlineKeyboardMarkup | None:
     """Выбор позиции из проверки (шаг перед корзиной)."""
     in_stock = _in_stock_check_indices(results)
@@ -237,6 +244,11 @@ def check_results_keyboard(results: list[ProductCheckResult]) -> InlineKeyboardM
                 f"🛒 Добавить всё в наличии ({len(in_stock)})",
                 callback_data=CB_CHECK_ALL,
             )
+        ])
+    if _has_multi_weight_variants(results):
+        rows.append([
+            InlineKeyboardButton("📦 Все мин. вес", callback_data=CB_CHECK_MIN_WEIGHT),
+            InlineKeyboardButton("📦 Все макс. вес", callback_data=CB_CHECK_MAX_WEIGHT),
         ])
     rows.append([InlineKeyboardButton("❌ Закрыть", callback_data=CB_DISMISS)])
     return InlineKeyboardMarkup(rows)

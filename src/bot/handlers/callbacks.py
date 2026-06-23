@@ -59,6 +59,8 @@ from bot.inline_keyboards import (
     CB_CLARIFY_RESET,
     CB_CHECK_ALL,
     CB_CHECK_CONFIRM,
+    CB_CHECK_MIN_WEIGHT,
+    CB_CHECK_MAX_WEIGHT,
     CB_CHECK_PICK,
     CB_DISMISS,
     CB_EXCL_RESET,
@@ -143,6 +145,7 @@ from bot.handlers.mix_flow import _callback_mix_build
 from bot.handlers.cart_flow import _run_cart_log_from_chat, _run_cart_view_from_chat
 from bot.handlers.check_flow import (
     _callback_check_all,
+    _callback_check_by_weight,
     _callback_check_confirm,
     _callback_check_pick,
 )
@@ -389,6 +392,14 @@ async def handle_callback_query(
 
     if data == CB_CHECK_ALL:
         await _callback_check_all(update, context)
+        return
+
+    if data == CB_CHECK_MIN_WEIGHT:
+        await _callback_check_by_weight(update, context, "min")
+        return
+
+    if data == CB_CHECK_MAX_WEIGHT:
+        await _callback_check_by_weight(update, context, "max")
         return
 
     if data.startswith(CB_CHECK_PICK):

@@ -55,6 +55,18 @@ AvailabilityStatus = Literal["есть", "нет", "не найден"]
 
 
 @dataclass
+class WeightVariant:
+    """Один вариант граммовки найденного товара."""
+
+    weight_g: int | None
+    price: float | None
+    in_stock: bool
+    max_quantity: float | None
+    product_id: str
+    url: str
+
+
+@dataclass
 class ProductCheckResult:
     """Результат проверки одной позиции из списка."""
 
@@ -70,6 +82,34 @@ class ProductCheckResult:
     pack_count: int = 1
     requested_weight_g: int | None = None
     matched_weight_g: int | None = None
+    weight_variants: list[WeightVariant] = field(default_factory=list)
+
+
+def find_weight_variants(
+    product: CatalogProduct,
+    all_products: list[CatalogProduct],
+) -> list[WeightVariant]:
+    """Найти все варианты граммовки для данного товара в списке продуктов.
+
+    Сравнивает нормализованные базовые имена (без граммовки).
+    """
+    base = WEIGHT_IN_NAME_RE.sub("", product.name).strip().rstrip(".,").strip()
+    base_norm = normalize_text(base)
+    variants: list[WeightVariant] = []
+    for p in all_products:
+        p_base = WEIGHT_IN_NAME_RE.sub("", p.name).strip().rstrip(".,").strip()
+        if normalize_text(p_base) == base_norm:
+            variants.append(
+                WeightVariant(
+                    weight_g=_weight_in_name(p.name),
+                    price=p.price,
+                    in_stock=is_in_stock(p),
+                    max_quantity=p.max_quantity,
+                    product_id=p.id,
+                    url=p.url,
+                )
+            )
+    return sorted(variants, key=lambda v: v.weight_g or 0)
 
 
 def is_in_stock(product: CatalogProduct) -> bool:

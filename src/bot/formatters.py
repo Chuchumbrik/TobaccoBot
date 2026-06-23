@@ -37,7 +37,21 @@ def _compact_name(base_name: str, brand_display: str | None = None) -> str:
     return name
 
 
-def format_check_result(r: ProductCheckResult) -> str:
+def _format_weight_variants(r: "ProductCheckResult") -> str | None:
+    """Строка с граммовками: «25г ❌ · 100г ✅ 900₽ · 200г ✅ 1500₽» или None."""
+    variants = r.weight_variants
+    if not variants or len(variants) <= 1:
+        return None
+    parts = []
+    for v in variants:
+        w = f"{v.weight_g}г" if v.weight_g else "?"
+        icon = "✅" if v.in_stock else "❌"
+        price = f" {int(v.price)}₽" if v.price is not None else ""
+        parts.append(f"{w}{icon}{price}")
+    return "   " + " · ".join(parts)
+
+
+def format_check_result(r: "ProductCheckResult") -> str:
     if r.status == "не найден":
         return f"❓ <b>{_esc(r.query)}</b> — у поставщика такого табака нет"
 
@@ -69,6 +83,9 @@ def format_check_result(r: ProductCheckResult) -> str:
     lines = [" ".join(parts)]
     if r.matched_name:
         lines.append(f"→ {_esc(r.matched_name)}")
+    variants_line = _format_weight_variants(r)
+    if variants_line:
+        lines.append(variants_line)
     return "\n".join(lines)
 
 

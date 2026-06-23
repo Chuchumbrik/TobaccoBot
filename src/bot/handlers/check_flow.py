@@ -4,10 +4,12 @@ from __future__ import annotations
 
 
 import asyncio
+import dataclasses
 import logging
 import re
 import sys
 from pathlib import Path
+from typing import Literal
 
 from telegram import InlineKeyboardMarkup, Message, Update
 from telegram.constants import ParseMode
@@ -51,6 +53,8 @@ from bot.inline_keyboards import (
     CB_CANCEL,
     CB_CLARIFY_RESET,
     CB_CHECK_CONFIRM,
+    CB_CHECK_MIN_WEIGHT,
+    CB_CHECK_MAX_WEIGHT,
     CB_CHECK_PICK,
     CB_DISMISS,
     CB_FLAVOR_CONFIRM,
@@ -312,4 +316,71 @@ async def _callback_check_confirm(
         await query.answer(f"Ошибка входа: {exc}", show_alert=True)
     except Exception:
         logger.exception("callback check cart failed")
+        await query.answer("Ошибка добавления", show_alert=True)
+
+
+def _pick_by_weight(
+    checks: list,
+    mode: Literal["min", "max"],
+) -> list:
+    """Для каждого найденного чека выбрать нужную граммовку по вариантам."""
+    from oshisha.catalog import ProductCheckResult
+    result = []
+    for check in checks:
+        if check.status == "не найден":
+            continue
+        in_stock_variants = [v for v in (check.weight_variants or []) if v.in_stock]
+        if not in_stock_variants:
+            if check.status == "есть":
+                result.append(check)
+            continue
+        target = (
+            min(in_stock_variants, key=lambda v: v.weight_g or 0)
+            if mode == "min"
+            else max(in_stock_variants, key=lambda v: v.weight_g or 0)
+        )
+        result.append(dataclasses.replace(
+            check,
+            product_id=target.product_id,
+            status="есть",
+            url=target.url,
+            price=target.price,
+            max_quantity=target.max_quantity,
+            matched_weight_g=target.weight_g,
+        ))
+    return result
+
+
+async def _callback_check_by_weight(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    mode: Literal["min", "max"],
+) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    checks = get_checks(context)
+    selected = _pick_by_weight(checks, mode)
+    if not selected:
+        await query.answer("Нет позиций в наличии", show_alert=True)
+        return
+    label = "мин." if mode == "min" else "макс."
+    try:
+        # Передаём selected напрямую (product_id уже переопределён на нужную граммовку)
+        batch = await osh.add_checks_to_cart(get_service(context), selected)
+        log_cart_batch(update, context, batch)
+        await query.answer(f"✅ Добавлено по {label} весу: {batch.added_count}")
+        chat_id = query.message.chat_id if query.message else None
+        if chat_id:
+            await context.bot.send_message(
+                chat_id,
+                format_cart_batch(batch),
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+                reply_markup=after_cart_keyboard(),
+            )
+    except OshishaAuthError as exc:
+        await query.answer(f"Ошибка входа: {exc}", show_alert=True)
+    except Exception:
+        logger.exception("callback check by weight failed")
         await query.answer("Ошибка добавления", show_alert=True)
