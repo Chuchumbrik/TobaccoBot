@@ -233,6 +233,11 @@ class Vocabulary:
             return []
 
         top = max(best.values())
+        if top == 1.0:
+            # Точное совпадение: возвращаем только ключи с точным матчем,
+            # чтобы generic-подстроки («виноград» внутри «виноградная газировка»)
+            # не вытесняли специфичный вкус («grape_soda»).
+            return [k for k, s in sorted(best.items(), key=lambda x: -x[1]) if s == 1.0]
         cutoff = max(typo_threshold, top - 0.12)
         return [k for k, s in sorted(best.items(), key=lambda x: -x[1]) if s >= cutoff]
 

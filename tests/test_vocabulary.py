@@ -28,3 +28,28 @@ def test_match_brand_alias():
     assert key == "blackburn"
     assert vocab.brands["blackburn"].display == "BlackBurn"
     assert "малина" in rest
+
+
+class TestExactMatchSuppressesGeneric:
+    """Регрессия: «виноградная газировка» не должна матчить generic grape."""
+
+    def _vocab(self):
+        vocab_dir = Path(__file__).resolve().parents[1] / "data" / "vocab"
+        return Vocabulary.load(vocab_dir)
+
+    def test_grape_soda_not_matched_as_generic_grape(self):
+        vocab = self._vocab()
+        keys = vocab.match_flavors("виноградная газировка")
+        assert "grape" not in keys, f"generic grape не должен матчиться, got {keys}"
+        assert "grape_soda" in keys, f"ожидали grape_soda, got {keys}"
+
+    def test_ice_grape_not_generic_grape(self):
+        vocab = self._vocab()
+        keys = vocab.match_flavors("ледяной виноград")
+        assert "grape" not in keys, f"generic grape не должен матчиться, got {keys}"
+        assert "ice_grape" in keys, f"ожидали ice_grape, got {keys}"
+
+    def test_plain_grape_still_matches(self):
+        vocab = self._vocab()
+        keys = vocab.match_flavors("виноград")
+        assert "grape" in keys, f"обычный виноград должен матчить grape, got {keys}"
