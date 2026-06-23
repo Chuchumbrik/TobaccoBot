@@ -1,4 +1,6 @@
 {
+  "_comment": "Ручные правки брендов. НЕ перезаписывается build_vocab_from_catalog.py.",
+
   "blackburn": {
     "display": "BlackBurn",
     "catalog_section": "/catalog/burn_black/",
@@ -8,18 +10,97 @@
       "блэк берн", "блэкберн", "блек берн"
     ]
   },
+
   "sarma": {
     "display": "САРМА",
     "aliases": ["сарма", "sarma", "сарму"]
   },
+
   "musthave": {
     "display": "MustHave",
-    "aliases": ["must have", "musthave", "мах", "mh", "маст хев"]
+    "aliases": ["must have", "musthave", "мах", "mh", "маст хев", "маст", "mast have"]
   },
+
   "snobless": {
     "display": "Сноблес",
     "catalog_section": "/catalog/burn_black/",
     "site_names": ["Burn BLACK"],
     "aliases": ["сноблес", "snobless", "сноблесс", "snowless"]
+  },
+
+  "kraken": {
+    "display": "Kraken",
+    "site_names": ["Kraken"],
+    "aliases": ["kraken", "кракен"]
+  },
+
+  "nakhla": {
+    "display": "Nakhla",
+    "site_names": ["Nakhla"],
+    "aliases": ["nakhla", "нахла", "нахла", "naxla"]
+  },
+
+  "wave": {
+    "display": "WAVE",
+    "site_names": ["WAVE"],
+    "aliases": ["wave", "вейв"]
+  },
+
+  "molodost": {
+    "display": "МОЛОДОСТЬ",
+    "site_names": ["МОЛОДОСТЬ"],
+    "aliases": ["молодость", "molodost"]
+  },
+
+  "izzibro": {
+    "display": "Izzibro",
+    "site_names": ["Izzibro"],
+    "aliases": ["izzibro", "изибро", "иззибро"]
+  },
+
+  "hook": {
+    "display": "Hook",
+    "site_names": ["Hook"],
+    "aliases": ["hook", "хук"]
+  },
+
+  "palitra": {
+    "display": "PALITRA",
+    "site_names": ["PALITRA"],
+    "aliases": ["palitra", "палитра"]
+  },
+
+  "bliss": {
+    "display": "Bliss",
+    "site_names": ["Bliss"],
+    "aliases": ["bliss", "блис", "блисс"]
+  },
+
+  "iskra": {
+    "display": "ISKRA",
+    "site_names": ["ISKRA"],
+    "aliases": ["iskra", "искра"]
+  },
+
+  "muassel": {
+    "display": "Muassel",
+    "site_names": ["Muassel"],
+    "aliases": ["muassel", "муассель", "муасель", "muas"]
+  },
+
+  "severnyy": {
+    "display": "Северный",
+    "site_names": ["Северный"],
+    "aliases": ["северный", "северн", "severnyy", "severn"]
+  },
+
+  "satyr": {
+    "display": "Satyr",
+    "aliases": ["satyr", "сатир", "сартир", "сэтир", "satir"]
+  },
+
+  "trofimov": {
+    "display": "Trofimoff's",
+    "aliases": ["trofimov", "trofimoff s", "trofimoffs", "троф", "трофимоф", "трофимов", "trof"]
   }
 }

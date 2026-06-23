@@ -106,7 +106,7 @@ class OshishaCart:
         if not product.can_buy:
             return None
         qty = max(1, quantity)
-        unit = int(product.price) if product.price is not None else 0
+        unit = round(product.price) if product.price is not None else 0
         return {
             "ID": str(product.id),
             "QUANTITY": qty,
@@ -122,7 +122,7 @@ class OshishaCart:
         if check.status == "нет":
             return None
         qty = max(1, check.pack_count)
-        unit = int(check.price) if check.price is not None else 0
+        unit = round(check.price) if check.price is not None else 0
         return {
             "ID": str(check.product_id),
             "QUANTITY": qty,

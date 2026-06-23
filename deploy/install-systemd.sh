@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UNIT_NAME="tbottabak.service"
 UNIT_DST="/etc/systemd/system/${UNIT_NAME}"
+SERVICE_USER="tbottabak"
 
 if [[ ! -f "${ROOT}/.venv/bin/python" ]]; then
   echo "Нет ${ROOT}/.venv — сначала: python3 -m venv .venv && pip install -r requirements.txt"
@@ -16,8 +17,15 @@ if [[ ! -f "${ROOT}/.env" ]]; then
   exit 1
 fi
 
-# Подставить фактические пути в unit-файл
-sed "s|/root/TobaccoBot|${ROOT}|g" "${ROOT}/deploy/tbottabak.service" | sudo tee "${UNIT_DST}" > /dev/null
+if ! id "${SERVICE_USER}" &>/dev/null; then
+  echo "Создаю системного пользователя ${SERVICE_USER}…"
+  sudo useradd -r -m -d /opt/tbottabak "${SERVICE_USER}" 2>/dev/null || \
+    sudo useradd -r "${SERVICE_USER}"
+fi
+
+sudo chown -R "${SERVICE_USER}:${SERVICE_USER}" "${ROOT}"
+
+sed "s|/opt/tbottabak|${ROOT}|g" "${ROOT}/deploy/tbottabak.service" | sudo tee "${UNIT_DST}" > /dev/null
 
 sudo systemctl daemon-reload
 sudo systemctl enable "${UNIT_NAME}"

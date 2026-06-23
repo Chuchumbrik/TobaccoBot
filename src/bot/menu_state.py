@@ -6,13 +6,18 @@ from telegram.ext import ContextTypes
 
 MODE_KEY = "await_mode"
 
-PROMPT_FOOTER = "\n\n<i>Под сообщением — ❌ Отмена. Также: 🏠 Меню · /help</i>"
+PROMPT_FOOTER = "\n\n<i>❌ под сообщением — отмена</i>"
 
 MODE_FLAVOR = "flavor"
 MODE_SINGLE = "single"
 MODE_LIST = "list"
 MODE_CART_SINGLE = "cart_single"
 MODE_CART_LIST = "cart_list"
+MODE_ADVISE = "advise"
+MODE_ADVISE_REFINE = "advise_refine"
+MODE_ADVISE_CLARIFY = "advise_clarify"  # ждём ответа на уточняющий вопрос
+MODE_COMPARE = "compare"
+MODE_COMPARE_LIST = "compare_list"  # reserved
 
 
 def set_mode(context: ContextTypes.DEFAULT_TYPE, mode: str) -> None:
@@ -32,8 +37,8 @@ def has_mode(context: ContextTypes.DEFAULT_TYPE) -> bool:
 
 
 PROMPT_FLAVOR = (
-    "🔍 <b>Шаг 2 из 2 — поиск по вкусу</b>\n\n"
-    "Отправьте <b>одну строку</b> с вкусом и граммовкой:\n"
+    "🔍 <b>Поиск по вкусу</b>\n\n"
+    "Отправьте вкус и граммовку:\n"
     "• <code>малина 200</code>\n"
     "• <code>арбуз дыня</code>\n"
     "• <code>кокос | must have</code>\n\n"
@@ -42,8 +47,8 @@ PROMPT_FLAVOR = (
 )
 
 PROMPT_SINGLE = (
-    "📦 <b>Шаг 2 из 2 — проверка позиции</b>\n\n"
-    "Отправьте <b>одну</b> строку из прайса:\n"
+    "📦 <b>Проверка позиции</b>\n\n"
+    "Отправьте одну строку из прайса:\n"
     "• <code>66 мармелад кола 200</code>\n"
     "• <code>сарма малина 200</code>\n"
     "• <code>бб черешня 200 3х</code>\n\n"
@@ -52,9 +57,8 @@ PROMPT_SINGLE = (
 )
 
 PROMPT_LIST = (
-    "📝 <b>Шаг 2 из 2 — проверка списка</b>\n\n"
-    "Одно сообщение, <b>каждая позиция с новой строки</b> (минимум 2).\n"
-    "Пример:\n"
+    "📝 <b>Проверка списка</b>\n\n"
+    "Одно сообщение, каждая позиция с новой строки (минимум 2):\n"
     "<code>66 мармелад кола 200\n"
     "сарма малина 200\n"
     "арбуз-дыня 200</code>\n\n"
@@ -63,7 +67,7 @@ PROMPT_LIST = (
 )
 
 PROMPT_CART_SINGLE = (
-    "🛒 <b>Шаг 2 из 2 — в корзину</b>\n\n"
+    "🛒 <b>Добавить в корзину</b>\n\n"
     "Та же строка, что для проверки:\n"
     "• <code>66 мармелад кола 200</code>\n"
     "• <code>сарма малина 200 3х</code> — три упаковки\n\n"
@@ -72,7 +76,7 @@ PROMPT_CART_SINGLE = (
 )
 
 PROMPT_CART_LIST = (
-    "🛒 <b>Шаг 2 из 2 — список в корзину</b>\n\n"
+    "🛒 <b>Список в корзину</b>\n\n"
     "Несколько строк в одном сообщении (минимум 2), "
     "как при проверке списка.\n\n"
     "Команда: /cartlist"
@@ -80,8 +84,9 @@ PROMPT_CART_LIST = (
 )
 
 PROMPT_IDLE = (
-    "👋 Выберите действие <b>кнопкой внизу</b>.\n\n"
-    "Не знаете с чего начать → <b>🔍 Поиск по вкусу</b>\n"
-    "Есть строка из прайса → <b>📦 Проверить</b>\n"
-    "Полная инструкция → <b>❓ Справка</b> или /help"
+    "👋 Просто напишите вкус — поищу автоматически.\n\n"
+    "Или выберите кнопку внизу:\n"
+    "• <b>📦 Проверить</b> — точная строка из прайса\n"
+    "• <b>📝 Список</b> — несколько позиций сразу\n"
+    "• <b>❓ Справка</b> — подробная инструкция"
 )

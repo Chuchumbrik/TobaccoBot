@@ -1,20 +1,700 @@
 {
+  "_comment": "Ручные правки словаря вкусов. НЕ перезаписывается build_vocab_from_catalog.py.",
+
+  "_section_bb": "=== BlackBurn специфические вкусы ===",
+
   "bb_haribon": {
+    "display": "Haribon (мармелад кола)",
     "aliases": ["мармелад кола", "мармелад с колой", "харибон", "харибо"],
+    "site_terms": ["Haribon", "Мармелад кола"],
     "search_hints": ["BlackBurn Haribon", "мармелад с колой BlackBurn"]
   },
   "bb_strawberry_jam": {
     "aliases": ["клубничный джем", "клуб джем", "клубнич"],
+    "site_terms": ["Strawberry Jam", "клубничное варенье"],
     "search_hints": ["BlackBurn клубнич", "Strawberry Jam"]
   },
   "bb_cherry_garden": {
-    "aliases": ["черешневый сок", "cherry garden", "чери гарден"],
+    "display": "Cherry Garden (черешневый сок)",
+    "aliases": ["черешневый сок", "черешнево-вишнёвый сок", "cherry garden", "чери гарден"],
+    "site_terms": ["Cherry Garden", "Черешневый сок", "Вишнёво-черешневый сок"],
     "search_hints": ["BlackBurn Cherry Garden", "BlackBurn черешневый"]
   },
+  "bb_creamy_corn": {
+    "display": "Сливочная кукуруза",
+    "aliases": ["сливочная кукуруза", "кукуруза сливочная", "сливочн кукуруза"],
+    "site_terms": ["Сливочная кукуруза"],
+    "search_hints": ["BlackBurn кукуруза", "BlackBurn Сливочная кукуруза"]
+  },
+  "bb_almond_pear": {
+    "display": "Миндальная груша",
+    "aliases": ["миндальная груша", "груша миндаль", "миндаль груша"],
+    "site_terms": ["Миндальная груша"],
+    "search_hints": ["BlackBurn Миндальная груша"]
+  },
+
+  "_section_sarma": "=== САРМА специфические вкусы ===",
+
   "sarma_country_cherry": {
+    "display": "Деревенская вишня",
+    "aliases": ["деревенская вишня", "деревенская вишенка", "вишня деревенская"],
+    "site_terms": ["Деревенская вишня"],
     "search_hints": ["САРМА деревенская вишня"]
   },
   "sarma_raspberry": {
+    "aliases": ["сарма малина", "sarma малина"],
+    "site_terms": ["Малина", "Raspberry"],
     "search_hints": ["САРМА лесная малина", "САРМА малина"]
+  },
+  "sarma_tangerine": {
+    "display": "Мандарин",
+    "aliases": ["мандарин", "мандаринн", "mandarin"],
+    "site_terms": ["Мандарин"],
+    "search_hints": ["САРМА Мандарин"]
+  },
+  "sarma_champagne": {
+    "display": "Шампанское",
+    "aliases": ["шампанское", "шампань", "champagne", "шампан"],
+    "site_terms": ["Шампанское"],
+    "search_hints": ["САРМА Шампанское"]
+  },
+
+  "_fix_sarma_1_unknown": "Убираем 'Вишня' из bucket-записи: САРМА вишню покрывает cherry + sarma_country_cherry",
+  "sarma_1_unknown": {
+    "site_terms": ["Ёлка", "Джин", "Сирень", "Гуарана"]
+  },
+
+  "_section_duft": "=== Duft специфические вкусы ===",
+
+  "duft_maple_syrup": {
+    "display": "Кленовый сироп",
+    "aliases": ["кленовый сироп", "maple syrup", "клен сироп", "кленов сироп"],
+    "site_terms": ["Maple syrup", "Кленовый сироп"],
+    "search_hints": ["Duft Maple syrup"]
+  },
+  "duft_kumquat": {
+    "display": "Кумкват",
+    "aliases": ["кумкват", "kumquat"],
+    "site_terms": ["Kumquat", "Кумкват"],
+    "search_hints": ["Duft Kumquat"]
+  },
+  "duft_guava_mama": {
+    "display": "Гуава",
+    "aliases": ["гуава", "guava", "guava mama"],
+    "site_terms": ["Guava Mama", "Гуава"],
+    "search_hints": ["Duft Guava"]
+  },
+
+  "_fix_nash_unknown": "Убираем из nash_*_unknown одиночные вкусовые слова, чтобы не давали ложных совпадений",
+  "nash_1_unknown": {
+    "site_terms": ["Корохо", "Коньяк", "Белое вино"]
+  },
+  "nash_light_unknown": {
+    "site_terms": ["Базилик", "Кислая бузина", "Сливочный Крем"]
+  },
+
+  "_fix_brusko_unknown": "Brusko bucket-запись: убираем одиночные популярные вкусы, чтобы не давали ложных совпадений",
+  "brusko_4_unknown": {
+    "site_terms": ["барбариса", "винограда"],
+    "aliases": ["энергетика"]
+  },
+
+  "_section_palitra": "=== Palitra специфические вкусы ===",
+
+  "palitra_double_frost": {
+    "display": "Дабл фрост",
+    "aliases": ["дабл фрост", "double frost", "dablfrost", "dabl frost"],
+    "site_terms": ["Double Frost"],
+    "search_hints": ["PALITRA Double Frost"],
+    "brands": ["palitra"]
+  },
+
+  "_section_universal": "=== Универсальные ключи — покрывают все бренды ===",
+
+  "_u_skittles": "Скитлз / Skittles",
+  "skittles": {
+    "display": "Скитлз",
+    "aliases": ["скитлз", "скитлс", "skittles", "skittlez"],
+    "site_terms": ["Skittles", "Skittlez"],
+    "search_hints": []
+  },
+
+  "_u_strawberry": "Клубника / Strawberry",
+  "strawberry": {
+    "display": "Клубника",
+    "aliases": ["клубника", "strawberry", "клубнич", "клубничн", "клубнике", "клубнички"],
+    "site_terms": ["Strawberry", "Клубника"],
+    "search_hints": []
+  },
+
+  "_u_mint": "Мята / Mint — без 'Ice' (он слишком общий)",
+  "mint": {
+    "display": "Мята",
+    "aliases": ["мята", "mint", "ментол", "холодок", "мятн", "мятка", "ментоловый"],
+    "site_terms": ["Mint", "Мята"],
+    "search_hints": []
+  },
+
+  "_u_apple": "Яблоко / Apple",
+  "apple": {
+    "display": "Яблоко",
+    "aliases": ["яблоко", "apple", "яблочн", "яблочко", "яблоке", "зеленое яблоко", "красное яблоко"],
+    "site_terms": ["Apple", "Яблоко"],
+    "search_hints": []
+  },
+
+  "_u_peach": "Персик / Peach",
+  "peach": {
+    "display": "Персик",
+    "aliases": ["персик", "peach", "персиков", "персичн", "персики", "персике"],
+    "site_terms": ["Peach", "Персик"],
+    "search_hints": []
+  },
+
+  "_u_lemon": "Лимон / Lemon",
+  "lemon": {
+    "display": "Лимон",
+    "aliases": ["лимон", "lemon", "лимонн", "лимонад", "лимончик", "лимоне"],
+    "site_terms": ["Lemon", "Лимон"],
+    "search_hints": []
+  },
+
+  "_u_lime": "Лайм / Lime",
+  "lime": {
+    "display": "Лайм",
+    "aliases": ["лайм", "lime", "лаймов", "лайме"],
+    "site_terms": ["Lime", "Лайм"],
+    "search_hints": []
+  },
+
+  "_u_grape": "Виноград / Grape",
+  "grape": {
+    "display": "Виноград",
+    "aliases": ["виноград", "grape", "виноградн", "виноградик", "винограде"],
+    "site_terms": ["Grape", "Виноград"],
+    "search_hints": []
+  },
+
+  "_u_watermelon": "Арбуз / Watermelon",
+  "watermelon": {
+    "display": "Арбуз",
+    "aliases": ["арбуз", "watermelon", "арбузн", "арбузик", "арбузе"],
+    "site_terms": ["Watermelon", "Арбуз"],
+    "search_hints": []
+  },
+
+  "_u_cherry": "Вишня / Cherry",
+  "cherry": {
+    "display": "Вишня",
+    "aliases": ["вишня", "cherry", "вишнев", "черешня", "черешнев", "вишенка", "вишне", "вишни"],
+    "site_terms": ["Cherry", "Вишня", "Черешня"],
+    "search_hints": []
+  },
+
+  "_u_blueberry": "Черника / Blueberry",
+  "blueberry": {
+    "display": "Черника",
+    "aliases": ["черника", "blueberry", "черничн", "чернике", "черники"],
+    "site_terms": ["Blueberry", "Черника"],
+    "search_hints": []
+  },
+
+  "_u_mango": "Манго / Mango",
+  "mango": {
+    "display": "Манго",
+    "aliases": ["манго", "mango", "манговый", "манге"],
+    "site_terms": ["Mango", "Манго"],
+    "search_hints": []
+  },
+
+  "_u_pineapple": "Ананас / Pineapple",
+  "pineapple": {
+    "display": "Ананас",
+    "aliases": ["ананас", "pineapple", "ананасн", "ананасик", "ананасе"],
+    "site_terms": ["Pineapple", "Ананас"],
+    "search_hints": []
+  },
+
+  "_u_orange": "Апельсин / Orange",
+  "orange": {
+    "display": "Апельсин",
+    "aliases": ["апельсин", "orange", "апельсинов", "апельсине", "апельсины"],
+    "site_terms": ["Orange", "Апельсин"],
+    "search_hints": []
+  },
+
+  "_u_melon": "Дыня / Melon",
+  "melon": {
+    "display": "Дыня",
+    "aliases": ["дыня", "melon", "дынн", "дыне", "дыни"],
+    "site_terms": ["Melon", "Дыня"],
+    "search_hints": []
+  },
+
+  "_u_raspberry": "Малина / Raspberry",
+  "raspberry": {
+    "display": "Малина",
+    "aliases": ["малина", "raspberry", "малин", "малинка", "малине", "малиновый"],
+    "site_terms": ["Raspberry", "Малина"],
+    "search_hints": []
+  },
+
+  "_u_banana": "Банан / Banana",
+  "banana": {
+    "display": "Банан",
+    "aliases": ["банан", "banana", "бананов", "банане", "бананчик", "банановый"],
+    "site_terms": ["Banana", "Банан"],
+    "search_hints": []
+  },
+
+  "_u_coconut": "Кокос / Coconut",
+  "coconut": {
+    "display": "Кокос",
+    "aliases": ["кокос", "coconut", "кокосов", "кокосе", "кокосовый"],
+    "site_terms": ["Coconut", "Кокос"],
+    "search_hints": []
+  },
+
+  "_u_cranberry": "Клюква / Cranberry",
+  "cranberry": {
+    "display": "Клюква",
+    "aliases": ["клюква", "cranberry", "клюквен", "клюкве", "клюквенный"],
+    "site_terms": ["Cranberry", "Клюква"],
+    "search_hints": []
+  },
+
+  "_u_black_currant": "Чёрная смородина / Black Currant",
+  "black_currant": {
+    "display": "Чёрная смородина",
+    "aliases": ["черная смородина", "чёрная смородина", "black currant", "blackcurrant",
+                "смородина черная", "смородина", "чсм", "черн смородина", "смородин"],
+    "site_terms": ["Black Currant", "Чёрная смородина", "Черная смородина", "Смородина"],
+    "search_hints": []
+  },
+
+  "_u_red_currant": "Красная смородина / Red Currant",
+  "red_currant": {
+    "display": "Красная смородина",
+    "aliases": ["красная смородина", "red currant", "redcurrant", "смородина красная", "красн смородина"],
+    "site_terms": ["Red Currant", "Красная смородина"],
+    "search_hints": []
+  },
+
+  "_u_passion_fruit": "Маракуйя / Passion Fruit",
+  "passion_fruit": {
+    "display": "Маракуйя",
+    "aliases": ["маракуйя", "passion fruit", "passionfruit", "маракуй", "маракуйе"],
+    "site_terms": ["Passion Fruit", "Маракуйя"],
+    "search_hints": []
+  },
+
+  "_u_grapefruit": "Грейпфрут / Grapefruit",
+  "grapefruit": {
+    "display": "Грейпфрут",
+    "aliases": ["грейпфрут", "grapefruit", "грейпфрутов", "грейп"],
+    "site_terms": ["Grapefruit", "Грейпфрут"],
+    "search_hints": []
+  },
+
+  "_u_tangerine": "Мандарин / Tangerine",
+  "tangerine": {
+    "display": "Мандарин",
+    "aliases": ["мандарин", "tangerine", "mandarin", "мандаринн", "мандарины", "мандаринов"],
+    "site_terms": ["Tangerine", "Mandarin", "Мандарин"],
+    "search_hints": []
+  },
+
+  "_u_lychee": "Личи / Lychee",
+  "lychee": {
+    "display": "Личи",
+    "aliases": ["личи", "lychee", "litchi", "lichi", "личе"],
+    "site_terms": ["Lychee", "Личи"],
+    "search_hints": []
+  },
+
+  "_u_guava": "Гуава / Guava",
+  "guava": {
+    "display": "Гуава",
+    "aliases": ["гуава", "guava", "гуавов"],
+    "site_terms": ["Guava", "Гуава"],
+    "search_hints": []
+  },
+
+  "_u_papaya": "Папайя / Papaya",
+  "papaya": {
+    "display": "Папайя",
+    "aliases": ["папайя", "papaya", "папайе"],
+    "site_terms": ["Papaya", "Папайя"],
+    "search_hints": []
+  },
+
+  "_u_gooseberry": "Крыжовник / Gooseberry",
+  "gooseberry": {
+    "display": "Крыжовник",
+    "aliases": ["крыжовник", "gooseberry", "крыжовник"],
+    "site_terms": ["Gooseberry", "Крыжовник"],
+    "search_hints": []
+  },
+
+  "_u_pomelo": "Помело / Pomelo",
+  "pomelo": {
+    "display": "Помело",
+    "aliases": ["помело", "pomelo", "помел"],
+    "site_terms": ["Pomelo", "Помело"],
+    "search_hints": []
+  },
+
+  "_u_fig": "Инжир / Fig",
+  "fig": {
+    "display": "Инжир",
+    "aliases": ["инжир", "fig", "инжире", "инжиров"],
+    "site_terms": ["Fig", "Инжир"],
+    "search_hints": []
+  },
+
+  "_u_earthberry": "Земляника / Wild Strawberry",
+  "earthberry": {
+    "display": "Земляника",
+    "aliases": ["земляника", "wild strawberry", "земляничн", "земляничка", "землянике"],
+    "site_terms": ["Земляника", "Wild Strawberry"],
+    "search_hints": []
+  },
+
+  "_u_honey": "Мёд / Honey",
+  "honey": {
+    "display": "Мёд",
+    "aliases": ["мёд", "мед", "honey", "медов", "медовый", "меде"],
+    "site_terms": ["Honey", "Мёд", "Мед"],
+    "search_hints": []
+  },
+
+  "_u_vanilla": "Ваниль / Vanilla",
+  "vanilla": {
+    "display": "Ваниль",
+    "aliases": ["ваниль", "vanilla", "ванил", "ванильн", "ванильный"],
+    "site_terms": ["Vanilla", "Ваниль"],
+    "search_hints": []
+  },
+
+  "_u_caramel": "Карамель / Caramel",
+  "caramel": {
+    "display": "Карамель",
+    "aliases": ["карамель", "caramel", "карамельн", "карамельный"],
+    "site_terms": ["Caramel", "Карамель"],
+    "search_hints": []
+  },
+
+  "_u_chocolate": "Шоколад / Chocolate",
+  "chocolate": {
+    "display": "Шоколад",
+    "aliases": ["шоколад", "chocolate", "шоколадн", "шоколадный"],
+    "site_terms": ["Chocolate", "Шоколад"],
+    "search_hints": []
+  },
+
+  "_u_coffee": "Кофе / Coffee",
+  "coffee": {
+    "display": "Кофе",
+    "aliases": ["кофе", "coffee", "кофейн", "кофейный", "кофе "],
+    "site_terms": ["Coffee", "Кофе"],
+    "search_hints": []
+  },
+
+  "_u_cola": "Кола / Cola",
+  "cola": {
+    "display": "Кола",
+    "aliases": ["кола", "cola", "колу", "коле"],
+    "site_terms": ["Cola", "Кола"],
+    "search_hints": []
+  },
+
+  "_u_cinnamon": "Корица / Cinnamon",
+  "cinnamon": {
+    "display": "Корица",
+    "aliases": ["корица", "cinnamon", "корицей", "коричн"],
+    "site_terms": ["Cinnamon", "Корица"],
+    "search_hints": []
+  },
+
+  "_u_cream": "Сливки / Cream",
+  "cream": {
+    "display": "Сливки",
+    "aliases": ["сливки", "cream", "сливочн", "сливочный", "крем", "кремов"],
+    "site_terms": ["Cream", "Сливки", "Сливочный"],
+    "search_hints": []
+  },
+
+  "_u_cookie": "Печенье / Cookie",
+  "cookie": {
+    "display": "Печенье",
+    "aliases": ["печенье", "cookie", "cookies", "печеньк", "бисквит"],
+    "site_terms": ["Cookie", "Cookies", "Печенье"],
+    "search_hints": []
+  },
+
+  "_u_waffle": "Вафли / Waffle",
+  "waffle": {
+    "display": "Вафли",
+    "aliases": ["вафли", "waffle", "waffles", "вафля", "вафельн"],
+    "site_terms": ["Waffle", "Waffles", "Вафли"],
+    "search_hints": []
+  },
+
+  "_u_yogurt": "Йогурт / Yogurt",
+  "yogurt": {
+    "display": "Йогурт",
+    "aliases": ["йогурт", "yogurt", "yoghurt", "йогуртов", "йогурте"],
+    "site_terms": ["Yogurt", "Йогурт"],
+    "search_hints": []
+  },
+
+  "_u_energy": "Энергетик / Energy Drink",
+  "energy_drink": {
+    "display": "Энергетик",
+    "aliases": ["энергетик", "energy drink", "energy", "энерг", "энергетический"],
+    "site_terms": ["Energy", "Энергетик"],
+    "search_hints": []
+  },
+
+  "_u_earl_grey": "Чай Эрл Грей / Earl Grey",
+  "earl_grey": {
+    "display": "Эрл Грей",
+    "aliases": ["эрл грей", "earl grey", "earl gray", "эрл грэй", "эрлгрей"],
+    "site_terms": ["Earl Grey", "Earl Gray", "Эрл Грей", "Эрл грэй"],
+    "search_hints": []
+  },
+
+  "_u_ice_cold": "Холодок / Ice / Ледяной — общий ключ для охлаждающих вкусов",
+  "ice_cold": {
+    "display": "Холодок",
+    "aliases": ["холодок", "ледяной", "ice", "айс", "холодный", "ледяная", "со льдом", "cold"],
+    "site_terms": ["Ice", "Холодок", "Ледяной"],
+    "search_hints": []
+  },
+
+  "_u_pear": "Груша / Pear",
+  "pear": {
+    "display": "Груша",
+    "aliases": ["груша", "pear", "грушев", "грушевый", "груше", "грушу"],
+    "site_terms": ["Pear", "Груша"],
+    "search_hints": []
+  },
+
+  "_u_berry": "Ягода (generic) / Berry",
+  "berry": {
+    "display": "Ягода",
+    "aliases": ["ягода", "berry", "berries", "ягоды", "ягодн", "ягодный", "ягодка",
+                "ягодный микс", "ягодный купаж", "лесные ягоды"],
+    "site_terms": ["Berry", "Berries", "Ягода", "Ягоды"],
+    "search_hints": []
+  },
+
+  "_u_citrus": "Цитрус (generic) / Citrus",
+  "citrus": {
+    "display": "Цитрус",
+    "aliases": ["цитрус", "citrus", "цитрусов", "цитрусовый", "цитрусе"],
+    "site_terms": ["Citrus", "Цитрус"],
+    "search_hints": []
+  },
+
+  "_u_ice_cream": "Мороженое / Ice Cream",
+  "ice_cream": {
+    "display": "Мороженое",
+    "aliases": ["мороженое", "ice cream", "мороженку", "мороженка", "пломбир"],
+    "site_terms": ["Ice Cream", "Мороженое", "Пломбир"],
+    "search_hints": []
+  },
+
+  "_u_aloe": "Алоэ / Aloe",
+  "aloe": {
+    "display": "Алоэ",
+    "aliases": ["алоэ", "алое", "aloe", "aloe vera"],
+    "site_terms": ["Aloe", "Алоэ", "Алое"],
+    "search_hints": []
+  },
+
+  "_u_cactus": "Кактус / Cactus",
+  "cactus": {
+    "display": "Кактус",
+    "aliases": ["кактус", "cactus", "кактусов", "кактусе"],
+    "site_terms": ["Cactus", "Кактус"],
+    "search_hints": []
+  },
+
+  "_u_hazelnut": "Фундук / Орехи / Nuts",
+  "nuts": {
+    "display": "Орехи",
+    "aliases": ["орехи", "nuts", "nut", "орех", "ореховый", "фундук", "hazelnut",
+                "арахис", "peanut", "грецкий орех", "walnut", "миндаль", "almond"],
+    "site_terms": ["Nuts", "Фундук", "Hazelnut", "Арахис", "Миндаль"],
+    "search_hints": []
+  },
+
+  "_u_tobacco": "Табак / Tobacco — нейтральный/натуральный вкус",
+  "tobacco_taste": {
+    "display": "Табак",
+    "aliases": ["табак", "tobacco", "табачный", "без аромата", "натуральный"],
+    "site_terms": ["Tobacco", "Без аромата"],
+    "search_hints": []
+  },
+
+  "_u_rum": "Ром / Rum",
+  "rum": {
+    "display": "Ром",
+    "aliases": ["ром", "rum", "ромов", "ромовый"],
+    "site_terms": ["Rum", "Ром"],
+    "search_hints": []
+  },
+
+  "_u_whisky": "Виски / Whisky",
+  "whisky": {
+    "display": "Виски",
+    "aliases": ["виски", "whisky", "whiskey", "вискарь"],
+    "site_terms": ["Whisky", "Whiskey", "Виски"],
+    "search_hints": []
+  },
+
+  "_u_milk_tea": "Чай / Tea — общий ключ",
+  "tea": {
+    "display": "Чай",
+    "aliases": ["чай", "tea", "чайный", "фруктовый чай", "fruit tea", "зелёный чай", "green tea"],
+    "site_terms": ["Tea", "Чай"],
+    "search_hints": []
+  },
+
+  "_u_apricot": "Абрикос / Apricot",
+  "apricot": {
+    "display": "Абрикос",
+    "aliases": ["абрикос", "apricot", "абрикосов", "абрикосовый", "абрикосе"],
+    "site_terms": ["Apricot", "Абрикос"],
+    "search_hints": []
+  },
+
+  "_u_plum": "Слива / Plum",
+  "plum": {
+    "display": "Слива",
+    "aliases": ["слива", "plum", "сливов", "сливовый", "сливе"],
+    "site_terms": ["Plum", "Слива"],
+    "search_hints": []
+  },
+
+  "_u_kiwi": "Киви / Kiwi",
+  "kiwi": {
+    "display": "Киви",
+    "aliases": ["киви", "kiwi", "кивив", "киве"],
+    "site_terms": ["Kiwi", "Киви"],
+    "search_hints": []
+  },
+
+  "_u_halva": "Халва / Halva",
+  "halva": {
+    "display": "Халва",
+    "aliases": ["халва", "halva", "халве", "халву"],
+    "site_terms": ["Халва", "Halva"],
+    "search_hints": []
+  },
+
+  "_u_candy": "Леденец / Candy / Lozenges",
+  "candy": {
+    "display": "Леденцы",
+    "aliases": ["леденец", "леденцы", "candy", "lozenges", "карамелька", "сладкий"],
+    "site_terms": ["Candy", "Леденцы", "Леденец"],
+    "search_hints": []
+  },
+
+  "_u_smoothie": "Смузи / Smoothie",
+  "smoothie": {
+    "display": "Смузи",
+    "aliases": ["смузи", "smoothie", "смузе"],
+    "site_terms": ["Smoothie", "Смузи"],
+    "search_hints": []
+  },
+
+  "_u_sorbet": "Сорбет / Sorbet",
+  "sorbet": {
+    "display": "Сорбет",
+    "aliases": ["сорбет", "sorbet", "шербет", "sherbet"],
+    "site_terms": ["Sorbet", "Сорбет"],
+    "search_hints": []
+  },
+
+  "_u_milkshake": "Молочный коктейль / Milkshake",
+  "milkshake": {
+    "display": "Молочный коктейль",
+    "aliases": ["молочный коктейль", "milkshake", "milk shake", "молочко", "милкшейк"],
+    "site_terms": ["Milkshake", "Milk Shake", "Молочный коктейль"],
+    "search_hints": []
+  },
+
+  "_u_aperol": "Апероль / Aperol",
+  "aperol": {
+    "display": "Апероль",
+    "aliases": ["апероль", "aperol", "аперол", "апероль шприц", "aperol spritz"],
+    "site_terms": ["Aperol", "Апероль"],
+    "search_hints": []
+  },
+
+  "_u_yuzu": "Юзу / Yuzu",
+  "yuzu": {
+    "display": "Юзу",
+    "aliases": ["юзу", "yuzu"],
+    "site_terms": ["Yuzu", "Юзу"],
+    "search_hints": []
+  },
+
+  "_u_root_beer": "Root Beer / Корневое пиво",
+  "root_beer": {
+    "display": "Root Beer",
+    "aliases": ["root beer", "рут бир", "корневое пиво"],
+    "site_terms": ["Root Beer"],
+    "search_hints": []
+  },
+
+  "_u_mochi": "Моти / Mochi",
+  "mochi": {
+    "display": "Моти",
+    "aliases": ["моти", "mochi", "мочи"],
+    "site_terms": ["Mochi", "Моти"],
+    "search_hints": []
+  },
+
+  "_u_mojito": "Мохито / Mojito",
+  "mojito": {
+    "display": "Мохито",
+    "aliases": ["мохито", "mojito", "мохитo"],
+    "site_terms": ["Mojito", "Мохито"],
+    "search_hints": []
+  },
+
+  "_u_basil": "Базилик / Basil",
+  "basil": {
+    "display": "Базилик",
+    "aliases": ["базилик", "basil", "базилике", "базиликом"],
+    "site_terms": ["Basil", "Базилик"],
+    "search_hints": []
+  },
+
+  "_u_jam": "Варенье / Джем / Jam",
+  "jam": {
+    "display": "Варенье",
+    "aliases": ["варенье", "jam", "джем", "джемом", "варенья"],
+    "site_terms": ["Jam", "Варенье", "Джем"],
+    "search_hints": []
+  },
+
+  "_u_marshmallow": "Маршмеллоу / Marshmallow",
+  "marshmallow": {
+    "display": "Маршмеллоу",
+    "aliases": ["маршмеллоу", "marshmallow", "зефир", "зефирный"],
+    "site_terms": ["Marshmallow", "Маршмеллоу"],
+    "search_hints": []
+  },
+
+  "_u_lemonade": "Лимонад / Lemonade",
+  "lemonade": {
+    "display": "Лимонад",
+    "aliases": ["лимонад", "lemonade", "лимонадный"],
+    "site_terms": ["Lemonade", "Лимонад"],
+    "search_hints": []
   }
 }

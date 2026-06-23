@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from .catalog import (
@@ -29,6 +30,7 @@ class FlavorSearchHit:
     match_score: float
     requested_weight_g: int | None = None
     matched_weight_g: int | None = None
+    flavor_rank: int = 0  # 0=чистый вкус, 1=вариация, 2=микс
 
     @property
     def weight_note(self) -> str | None:
@@ -85,11 +87,102 @@ def _flavor_only_parsed(query: str, vocab: Vocabulary) -> ParsedQuery:
     return parsed
 
 
+def _flavor_rank(product_name: str, query_flavor_keys: list[str], vocab: Vocabulary) -> int:
+    """
+    Вычислить «вкусовой ранг» товара относительно поискового запроса.
+
+    Ранг определяет, насколько точно товар отражает искомый вкус:
+      0 — чистый вкус (только искомый вкус, возможно с прилагательным-модификатором)
+      1 — вариация / двойка (2 вкусовых концепта)
+      2 — микс (3 и более вкусовых концепта)
+
+    Пример для поиска «клубника»:
+      «Клубника L03»                             → 0
+      «Дикая клубника»                           → 0  (дикая = модификатор, не вкус)
+      «Клубника, кокос»                          → 1
+      «Клубничный Мохито»                        → 1
+      «Burn · клубничное варенье»                → 1
+      «Грейпфрут, клубника и малина»             → 2  (3 компонента через запятую+и)
+      «Burn · киви, клубника, грейпфрут»         → 2
+    """
+    # Берём часть после бренда (после ·)
+    flavor_part = product_name
+    if "·" in flavor_part:
+        flavor_part = flavor_part.split("·", 1)[1].strip()
+
+    # Убираем перевод/английское название в скобках — это транслитерация, не вкус
+    flavor_part_clean = re.sub(r"\([^)]*\)", "", flavor_part).strip()
+
+    # Убираем суффикс граммовки в конце (вместе с запятой, если есть):
+    # «Земляника, 25 гр.» → «Земляника»
+    # «Грейпфрут, клубника и малина, 200 гр.» → «Грейпфрут, клубника и малина»
+    flavor_part_clean = re.sub(
+        r",?\s*\d+\s*[гgГG][рrРR]?[.,]?\s*$", "", flavor_part_clean, flags=re.IGNORECASE
+    ).strip()
+
+    # ── Структурный анализ: подсчёт компонентов ──────────────────────────────
+    # Запятые + союз «и» между вкусами (например «малина и киви»)
+    comma_count = flavor_part_clean.count(",")
+    and_count = len(re.findall(r"\bи\b", flavor_part_clean))
+    total_components = comma_count + and_count + 1
+
+    if total_components >= 3:
+        return 2  # 3+ компонента — явный микс
+
+    if total_components == 2:
+        # Два компонента через запятую/«и»: один из них — искомый вкус,
+        # второй — дополнительный вкусовой концепт → вариация
+        return 1
+
+    # ── total_components == 1: всё название — один «вкусовой блок» ───────────
+    # Ищем другие вкусовые концепты из словаря, НО:
+    #   • работаем только с русской частью (без скобок)
+    #   • для однословных терминов проверяем точное совпадение слова,
+    #     а не подстроку (иначе «клубнич» ложно матчит внутри «клубника»)
+    p_check = normalize_text(flavor_part_clean)
+    p_words: set[str] = set(p_check.split())
+
+    other_terms: set[str] = set()
+    for key, flavor in vocab.flavors.items():
+        if key in query_flavor_keys:
+            continue
+        for term in flavor.aliases + flavor.site_terms:
+            t_norm = normalize_text(term)
+            if len(t_norm) < 4:
+                continue
+            t_words = t_norm.split()
+            if len(t_words) == 1:
+                # Однословный термин — только точное совпадение с целым словом
+                if t_norm in p_words:
+                    other_terms.add(t_norm)
+                    break
+            else:
+                # Многословная фраза — substring в пределах очищенной части
+                if t_norm in p_check:
+                    other_terms.add(t_norm)
+                    break
+
+    # Дедуп: если короткий термин входит в более длинный — один концепт, не два
+    # Пример: «варенье» + «клубничное варенье» → оставляем только «клубничное варенье»
+    sorted_terms = sorted(other_terms, key=len, reverse=True)
+    deduped: set[str] = set()
+    for term in sorted_terms:
+        if not any(term != t and term in t for t in deduped):
+            deduped.add(term)
+    other_terms = deduped
+
+    if len(other_terms) >= 2:
+        return 2  # два и более независимых концепта → микс
+    if len(other_terms) >= 1:
+        return 1  # один дополнительный концепт → вариация
+    return 0  # только искомый вкус
+
+
 def search_by_flavor(
     catalog: object,
     query: str,
     *,
-    limit: int = 15,
+    limit: int = 50,
     min_score: float = 0.42,
     in_stock_only: bool = False,
 ) -> FlavorSearchResult:
@@ -163,6 +256,7 @@ def search_by_flavor(
 
         matched_w = _weight_in_name(product.name)
         status = "есть" if in_stock else "нет"
+        rank = _flavor_rank(product.name, flavor_keys, vocab)
 
         hits.append(
             FlavorSearchHit(
@@ -174,12 +268,13 @@ def search_by_flavor(
                 match_score=round(score, 3),
                 requested_weight_g=parsed.weight_grams,
                 matched_weight_g=matched_w,
+                flavor_rank=rank,
             )
         )
         if len(hits) >= limit:
             break
 
-    hits.sort(key=lambda h: (h.status != "есть", -h.match_score))
+    hits.sort(key=lambda h: (h.status != "есть", h.flavor_rank, -h.match_score))
 
     return FlavorSearchResult(
         query=query,

@@ -5,10 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/TobaccoBot
+User=tbottabak
+Group=tbottabak
+WorkingDirectory=/opt/tbottabak
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/root/TobaccoBot/.venv/bin/python /root/TobaccoBot/scripts/run_bot.py
+EnvironmentFile=-/opt/tbottabak/.env
+ExecStart=/opt/tbottabak/.venv/bin/python /opt/tbottabak/scripts/run_bot.py
 Restart=on-failure
 RestartSec=10
 

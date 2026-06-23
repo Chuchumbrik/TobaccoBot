@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal
 from urllib.parse import quote_plus, urljoin
@@ -14,6 +16,12 @@ from .vocabulary import Vocabulary, get_vocabulary, normalize_text
 
 JCCATALOG_ITEM_RE = re.compile(r"new JCCatalogItem\((\{.*?\})\);", re.DOTALL)
 WEIGHT_IN_NAME_RE = re.compile(r"(\d+)\s*(?:гр?|g)\b", re.IGNORECASE)
+
+# Пары цвет-антоним: «красная смородина» не должна матчить «чёрная смородина»
+_COLOR_ANTONYMS: dict[str, frozenset[str]] = {
+    "красн": frozenset(["черн"]),
+    "черн": frozenset(["красн"]),
+}
 
 
 @dataclass
@@ -119,8 +127,20 @@ def score_product_match(parsed: ParsedQuery, product: CatalogProduct, vocab: Voc
         if not flavor:
             continue
         for term in flavor.site_terms:
-            if normalize_text(term) in p_norm:
-                base = min(1.0, base + 0.12)
+            t_norm = normalize_text(term)
+            t_words = t_norm.split()
+            if t_norm in p_norm:
+                # Короткий term (1–2 слова) прямо в названии — сильный сигнал вкуса
+                if len(t_words) <= 2:
+                    t_score = score_name_match(term, name)
+                    base = min(1.0, max(base + 0.12, t_score * 0.88 if t_score >= 0.65 else base + 0.12))
+                else:
+                    base = min(1.0, base + 0.12)
+            elif len(t_words) <= 3:
+                # Term не вошёл как подстрока, но частично совпадает (напр. «Strawberry Nectar» vs «Duft Strawberry»)
+                t_score = score_name_match(term, name)
+                if t_score >= 0.45:
+                    base = min(1.0, max(base, t_score * 0.85))
 
     if parsed.brand_key and not _brand_in_name(parsed.brand_key, name, vocab):
         base *= 0.35
@@ -130,6 +150,14 @@ def score_product_match(parsed: ParsedQuery, product: CatalogProduct, vocab: Voc
     if "малина" in q_norm and "вишня" not in q_norm and "вишня" in p_norm and "деревенск" not in p_norm:
         if "малина" in p_norm and "вишня" in p_norm:
             base *= 0.55
+
+    # Штраф за конфликт цвета («красная смородина» не должна матчить «чёрная смородина»)
+    q_raw_norm = normalize_text(parsed.raw)
+    for color_q, antonyms in _COLOR_ANTONYMS.items():
+        if color_q in q_raw_norm and all(a not in q_raw_norm for a in antonyms):
+            if any(a in p_norm for a in antonyms):
+                base *= 0.35
+                break
 
     if parsed.weight_grams is not None:
         pw = _weight_in_name(name)
@@ -200,9 +228,194 @@ def find_best_match(
     return best, best_score
 
 
+NON_TOBACCO_NAME_RE = re.compile(
+    r"\b(уголь|кальян|колба|чаша|чашка|шланг|калауд|kaloud|плитка|щипцы|"
+    r"мундштук|фольга|чубук|шахта|блюдце|клипса)\b",
+    re.IGNORECASE,
+)
+
+
+def _flavor_evidence_tokens(
+    parsed: ParsedQuery, vocab: Vocabulary
+) -> tuple[set[str], set[str]]:
+    """Токены искомого вкуса: (однословные, многословные-фразы)."""
+    singles: set[str] = set()
+    phrases: set[str] = set()
+
+    def add(text: str) -> None:
+        norm = normalize_text(text)
+        if not norm:
+            return
+        words = norm.split()
+        if len(words) == 1:
+            if len(norm) >= 3:
+                singles.add(norm)
+        else:
+            phrases.add(norm)
+
+    for fk in parsed.flavor_keys or []:
+        flavor = vocab.flavors.get(fk)
+        if not flavor:
+            continue
+        add(flavor.display)
+        for term in flavor.site_terms:
+            add(term)
+        for alias in flavor.aliases:
+            add(alias)
+
+    if parsed.flavor_text:
+        for word in normalize_text(parsed.flavor_text).split():
+            if len(word) >= 3:
+                singles.add(word)
+
+    return singles, phrases
+
+
+def has_flavor_evidence(
+    parsed: ParsedQuery, product_name: str, vocab: Vocabulary
+) -> bool:
+    """Есть ли в названии товара след искомого вкуса (а не только бренда).
+
+    Защищает от «совпадение только по бренду»: когда нужного вкуса в каталоге
+    нет, скоринг всё равно поднимает любой товар того же бренда выше порога.
+    """
+    if not (parsed.flavor_keys or parsed.flavor_text):
+        return True  # вкус не задан — гейтить нечего
+
+    singles, phrases = _flavor_evidence_tokens(parsed, vocab)
+    if not singles and not phrases:
+        return True
+
+    pn = normalize_text(product_name)
+    if any(phrase in pn for phrase in phrases):
+        return True
+    pwords = set(pn.split())
+    for tok in singles:
+        if tok in pwords:
+            return True
+        # морфология: «малина» → «малиновый», но только для длинных основ
+        if len(tok) >= 5 and tok in pn:
+            return True
+    return False
+
+
+def filter_by_flavor_evidence(
+    parsed: ParsedQuery,
+    products: list[CatalogProduct],
+    vocab: Vocabulary,
+) -> list[CatalogProduct]:
+    """Оставить только кандидатов с признаком искомого вкуса.
+
+    Если задан вкус и есть хотя бы один товар с его следом — вернуть только их.
+    Если ни одного — вернуть пустой список (значит, точного вкуса нет в наличии).
+    Если вкус не задан — вернуть всё как есть.
+    """
+    if not (parsed.flavor_keys or parsed.flavor_text):
+        return products
+    evidenced = [p for p in products if has_flavor_evidence(parsed, p.name, vocab)]
+    return evidenced
+
+
+_AROMA_PREFIX_RE = re.compile(r".*?с\s+ароматом\s+", re.IGNORECASE)
+_PARENS_RE = re.compile(r"\([^)]*\)")
+_WEIGHT_TAIL_RE = re.compile(r",?\s*\d+\s*[гgГG][рrРR]?[.,]?\s*$", re.IGNORECASE)
+
+
+def _flavor_part(product_name: str) -> str:
+    """Вкусовая часть названия: без бренда-префикса, скобок и граммовки."""
+    part = product_name
+    if "·" in part:
+        part = part.split("·", 1)[1]
+    m = _AROMA_PREFIX_RE.match(part)
+    if m:
+        part = part[m.end():]
+    part = _PARENS_RE.sub("", part)
+    part = _WEIGHT_TAIL_RE.sub("", part).strip()
+    return part
+
+
+def _component_count(text: str) -> int:
+    """Сколько вкусовых компонентов перечислено (по запятым и союзу «и»)."""
+    if not text:
+        return 0
+    commas = text.count(",")
+    ands = len(re.findall(r"\bи\b", text, re.IGNORECASE))
+    return commas + ands + 1
+
+
+def _query_component_count(parsed: ParsedQuery, vocab: Vocabulary) -> int:
+    """Сколько вкусов запросил пользователь (для отличия простого вкуса от микса)."""
+    src = parsed.flavor_text
+    if not src and parsed.flavor_keys:
+        src = ", ".join(
+            vocab.flavors[fk].display
+            for fk in parsed.flavor_keys
+            if fk in vocab.flavors
+        )
+    structural = _component_count(normalize_text(src)) if src else 0
+    return max(structural, len(parsed.flavor_keys or []))
+
+
+def filter_mix_overmatch(
+    parsed: ParsedQuery,
+    products: list[CatalogProduct],
+    vocab: Vocabulary,
+    *,
+    mix_threshold: int = 3,
+) -> list[CatalogProduct]:
+    """Убрать миксы 3+ компонентов, если запрос — простой вкус.
+
+    «черешневый сок» не должен матчиться на «вишня, меренга, персик» —
+    одно общее слово цепляет чужой микс.
+    """
+    q_comps = _query_component_count(parsed, vocab)
+    if q_comps >= mix_threshold:
+        return products  # пользователь сам просит микс — не фильтруем
+    return [
+        p
+        for p in products
+        if _component_count(_flavor_part(p.name)) < mix_threshold
+    ]
+
+
+def _check_candidates(
+    parsed: ParsedQuery,
+    products: list[CatalogProduct],
+    vocab: Vocabulary,
+) -> list[CatalogProduct]:
+    """Отсев кандидатов для проверки наличия по списку.
+
+    1. Убираем не-табак (уголь, кальяны, аксессуары) при заданном вкусе.
+    2. Оставляем только товары со следом искомого вкуса (анти-«только бренд»).
+    3. Убираем чужие миксы 3+ компонентов для простого запроса.
+    """
+    if not (parsed.flavor_keys or parsed.flavor_text):
+        return products
+    no_accessory = [p for p in products if not NON_TOBACCO_NAME_RE.search(p.name)]
+    evidenced = filter_by_flavor_evidence(parsed, no_accessory, vocab)
+    return filter_mix_overmatch(parsed, evidenced, vocab)
+
+
+def _live_max_searches() -> int:
+    """Макс. поисковых запросов к сайту за одну позицию при live-проверке в пакете."""
+    return int(os.environ.get("CATALOG_LIVE_MAX_SEARCHES", "3"))
+
+
+def _batch_live_delay() -> float:
+    """Задержка (сек) между позициями при live-проверке списка (cold cache)."""
+    return float(os.environ.get("CATALOG_BATCH_DELAY", "0.3"))
+
+
 def _js_object_to_dict(js_object: str) -> dict[str, Any]:
-    """Конвертация JS-объекта из JCCatalogItem в dict (одинарные кавычки)."""
-    return json.loads(js_object.replace("'", '"'))
+    """Конвертация аргумента JCCatalogItem({...}) в dict.
+
+    Bitrix современных версий передаёт валидный JSON — пробуем его первым.
+    Старый формат использует одинарные кавычки — запасной вариант.
+    """
+    try:
+        return json.loads(js_object)
+    except json.JSONDecodeError:
+        return json.loads(js_object.replace("'", '"'))
 
 
 def _parse_price(product: dict[str, Any]) -> tuple[float | None, float | None, str | None]:
@@ -333,7 +546,18 @@ class OshishaCatalog:
         resp.raise_for_status()
         return parse_catalog_html(resp.text, page_url=str(resp.url))
 
-    def _gather_candidates(self, parsed: ParsedQuery) -> list[CatalogProduct]:
+    def _gather_candidates(
+        self,
+        parsed: ParsedQuery,
+        *,
+        max_searches: int | None = None,
+    ) -> list[CatalogProduct]:
+        """Собрать кандидатов с сайта.
+
+        max_searches — ограничение числа поисковых запросов (None = без ограничений).
+        При max_searches != None раздел-fallback пропускается: экономим HTTP-запросы
+        при пакетной live-проверке с холодным кэшем.
+        """
         products: list[CatalogProduct] = []
         search_queries = self.vocab.build_search_terms(
             brand_key=parsed.brand_key,
@@ -344,27 +568,50 @@ class OshishaCatalog:
         if not search_queries:
             search_queries = [parsed.raw]
 
-        for search_q in search_queries:
+        limit = max_searches if max_searches is not None else len(search_queries)
+        for search_q in search_queries[:limit]:
             page = self.search(search_q)
             products.extend(page.products)
 
-        product, score = find_best_match(
-            parsed.raw, products, min_score=0.0, parsed=parsed, vocab=self.vocab
-        )
-        section = self.vocab.section_for(parsed.brand_key, parsed.flavor_keys or [])
-        if (product is None or score < 0.65) and section:
-            section_page = self.fetch_section(section)
-            products.extend(section_page.products)
-            total = section_page.total_pages or 1
-            for page_num in range(2, min(total + 1, 6)):
-                products.extend(self.fetch_section(section, page=page_num).products)
+        # Fallback через раздел каталога — только в полном (не throttled) режиме
+        if max_searches is None:
+            product, score = find_best_match(
+                parsed.raw, products, min_score=0.0, parsed=parsed, vocab=self.vocab
+            )
+            section = self.vocab.section_for(parsed.brand_key, parsed.flavor_keys or [])
+            if (product is None or score < 0.65) and section:
+                section_page = self.fetch_section(section)
+                products.extend(section_page.products)
+                total = section_page.total_pages or 1
+                for page_num in range(2, min(total + 1, 6)):
+                    products.extend(self.fetch_section(section, page=page_num).products)
 
         return _dedupe_products(products)
 
-    def check_product(self, query: str, *, min_score: float = 0.48) -> ProductCheckResult:
-        """Проверить одну позицию: разбор запроса + поиск + наличие."""
+    def check_product(
+        self,
+        query: str,
+        *,
+        min_score: float = 0.48,
+        _max_searches: int | None = None,
+    ) -> ProductCheckResult:
+        """Проверить одну позицию: разбор запроса + поиск + наличие.
+
+        _max_searches — внутренний параметр для ограничения HTTP-запросов
+        при пакетной live-проверке (передаётся из check_products).
+        """
+        from oshisha import catalog_cache
+
+        if catalog_cache.is_ready("oshisha"):
+            snap_result = catalog_cache.check_product_using_snapshot(
+                self, query, site_id="oshisha", min_score=min_score
+            )
+            if snap_result is not None:
+                return snap_result
+
         parsed = parse_query(query, self.vocab)
-        products = self._gather_candidates(parsed)
+        products = self._gather_candidates(parsed, max_searches=_max_searches)
+        products = _check_candidates(parsed, products, self.vocab)
         product, score = find_best_match(
             query, products, min_score=min_score, parsed=parsed, vocab=self.vocab
         )
@@ -418,11 +665,25 @@ class OshishaCatalog:
         *,
         min_score: float = 0.48,
     ) -> list[ProductCheckResult]:
-        """Проверить список названий из бота."""
+        """Проверить список названий из бота.
+
+        При пакетном запросе с холодным кэшем автоматически включает throttle:
+        - ограничивает число HTTP-запросов на позицию (CATALOG_LIVE_MAX_SEARCHES, по умолч. 3)
+        - добавляет задержку между позициями (CATALOG_BATCH_DELAY, по умолч. 0.3 с)
+        """
+        from oshisha import catalog_cache
+
+        lines = [n.strip() for n in names if n.strip() and not n.strip().startswith("#")]
+
+        is_batch = len(lines) > 3
+        cache_cold = not catalog_cache.is_ready("oshisha")
+        throttle = is_batch and cache_cold
+        max_searches: int | None = _live_max_searches() if throttle else None
+        delay = _batch_live_delay() if throttle else 0.0
+
         results: list[ProductCheckResult] = []
-        for name in names:
-            line = name.strip()
-            if not line or line.startswith("#"):
-                continue
-            results.append(self.check_product(line, min_score=min_score))
+        for i, line in enumerate(lines):
+            if throttle and i > 0:
+                time.sleep(delay)
+            results.append(self.check_product(line, min_score=min_score, _max_searches=max_searches))
         return results

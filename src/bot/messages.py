@@ -6,6 +6,7 @@ from bot.config import BotConfig
 from bot.menu_state import (
     MODE_CART_LIST,
     MODE_CART_SINGLE,
+    MODE_COMPARE,
     MODE_FLAVOR,
     MODE_LIST,
     MODE_SINGLE,
@@ -17,32 +18,50 @@ MODE_LABELS = {
     MODE_LIST: "📝 жду список для проверки",
     MODE_CART_SINGLE: "🛒 жду строку для корзины",
     MODE_CART_LIST: "🛒 жду список для корзины",
+    MODE_COMPARE: "⚖️ жду запрос для сравнения",
 }
 
 
-def format_welcome(*, active_mode: str | None = None) -> str:
+def format_welcome(
+    *,
+    active_mode: str | None = None,
+    compare_available: bool = False,
+    compare_sites: list[tuple[str, str]] | None = None,
+) -> str:
     lines = [
         "<b>TBotTabak</b> — табак и наличие на <b>oshisha.cc</b>",
         "",
-        "<b>Как пользоваться</b>",
-        "1. Нажмите кнопку внизу — бот скажет, что отправить.",
-        "2. Отправьте текст одним сообщением.",
-        "3. Получите результат. Дальше — другая кнопка или та же строка для корзины.",
-        "",
         "<b>Частые сценарии</b>",
-        "• Не знаете точное название → <b>🔍 Поиск по вкусу</b>",
-        "• Есть строка из прайса → <b>📦 Проверить</b> или <b>📝 Список</b>",
-        "• Собрать заказ на сайте → кнопки <b>🛒</b> под поиском или проверкой → <b>👀 Корзина</b>",
-        "• Кто что клал в корзину → <b>📜 Журнал</b> · новый заказ → <b>🔄 Новый заказ</b>",
-        "",
-        "Подробная инструкция: <b>❓ Справка</b> или команда /help",
+        "• Не знаете что хотите → /advise — опишите словами, ИИ подберёт",
+        "• Знаете вкус → /search или просто напишите название",
+        "• Есть строка из прайса → /check или /list (несколько строк)",
+        "• Собрать заказ → кнопки 🛒 под результатом → /cartview",
+        "• Кто что добавил → /cartlog · новый заказ → /logreset",
     ]
+    if compare_available and compare_sites:
+        names = ", ".join(name for _, name in compare_sites)
+        lines.append(
+            f"• Сравнить цены и наличие → /compare ({names})"
+        )
+    lines.extend(
+        [
+            "",
+            "Все команды и подробности: /help",
+        ]
+    )
     if active_mode and active_mode in MODE_LABELS:
         lines.insert(2, f"<i>Сейчас: {MODE_LABELS[active_mode]}</i>\n")
     return "\n".join(lines)
 
 
-def format_help_full(config: BotConfig, *, user_id: int = 0, is_admin_log: bool = False) -> str:
+def format_help_full(
+    config: BotConfig,
+    *,
+    user_id: int = 0,
+    is_admin_log: bool = False,
+    compare_available: bool = False,
+    compare_sites: list[tuple[str, str]] | None = None,
+) -> str:
     max_lines = config.check_list_max_lines
     journal_note = (
         "Видны <b>все</b> добавления из бота (вы администратор)."
@@ -52,11 +71,55 @@ def format_help_full(config: BotConfig, *, user_id: int = 0, is_admin_log: bool 
         else "Видны <b>все</b> добавления команды (админы не заданы в .env)."
     )
 
+    compare_block = ""
+    if compare_available and compare_sites:
+        names = ", ".join(name for _, name in compare_sites)
+        compare_block = f"""
+━━━━━━━━━━━━━━━━━━━━
+<b>⚖️ Сравнение магазинов</b>
+<i>Когда:</i> один запрос — результаты на всех подключённых сайтах ({names}).
+<b>Кнопка:</b> ⚖️ Сравнить · <b>Команда:</b> /compare · /sravn
+
+<b>Как:</b> одна строка — как поиск по вкусу; несколько строк — как проверка списка.
+<b>Пример:</b> <code>/compare малина 200</code>
+"""
+
+    compare_cmd = " · /compare — сравнение сайтов" if compare_available else ""
+
     return f"""<b>📖 Справка TBotTabak</b>
 
 <b>Общий принцип</b>
 Сначала кнопка или команда → бот объясняет формат → вы отправляете текст → ответ.
 Прервать шаг: кнопка <b>❌ Отмена</b> под сообщением, в меню или <b>🏠 Меню</b>. Справка: /help
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🎯 Советник (ИИ-подбор)</b>
+<i>Когда:</i> не знаете точное название — опишите что хотите словами.
+<b>Кнопка:</b> 🎯 Советник
+<b>Команды:</b> /advise · /sovet · /podber
+
+<b>Как:</b> нажмите кнопку → опишите свободным текстом.
+<b>Примеры:</b>
+• <code>хочу сладенькое и ягодное</code>
+• <code>что-то свежее, но без мяты</code>
+• <code>кисло-сладкое, лёгкое</code>
+
+Или просто напишите такой запрос без команды — бот определит сам.
+
+<i>После подборки:</i> <b>🛒 Выбрать</b> или <b>✏️ Уточнить запрос</b> — добавить условия.
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🎨 Тематический поиск</b>
+<i>Когда:</i> хотите просмотреть целую вкусовую категорию.
+<b>Команда:</b> /theme
+
+<b>Примеры:</b>
+• <code>/theme выпечка</code> — ваниль, корица, яблочный пирог…
+• <code>/theme травянистые</code> — мята, базилик, тархун…
+• <code>/theme пряные</code> — корица, имбирь, кардамон…
+• <code>/theme цветочные</code> — жасмин, лаванда, роза…
+
+Или просто напишите одно слово-тему без команды.
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>🔍 Поиск по вкусу</b>
@@ -73,7 +136,7 @@ def format_help_full(config: BotConfig, *, user_id: int = 0, is_admin_log: bool 
 Сразу без кнопки: <code>/search малина 200</code>
 
 <i>После поиска:</i> <b>Выбрать N</b> → уточнение варианта → <b>Положить в корзину</b>.
-
+{compare_block}
 ━━━━━━━━━━━━━━━━━━━━
 <b>📦 Проверить одну позицию</b>
 <i>Когда:</i> есть точная строка из прайса — нужны наличие и цена.
@@ -134,14 +197,27 @@ def format_help_full(config: BotConfig, *, user_id: int = 0, is_admin_log: bool 
 ━━━━━━━━━━━━━━━━━━━━
 <b>⌨️ Все команды</b>
 /start — меню · /help — эта справка
-/search — поиск · /check · /list — проверка
-/cart · /cartlist — в корзину · /cartview · /cartlog · /logreset
-/menu — вернуться в меню"""
+/advise — 🎯 советник (ИИ-подбор) · /theme — 🎨 тематический · /search — поиск по вкусу
+/check · /list — проверка · /cart · /cartlist — в корзину
+/cartview · /cartlog · /logreset · /menu{compare_cmd}"""
 
 
-def format_help_chunks(config: BotConfig, *, user_id: int = 0, is_admin_log: bool = False) -> list[str]:
+def format_help_chunks(
+    config: BotConfig,
+    *,
+    user_id: int = 0,
+    is_admin_log: bool = False,
+    compare_available: bool = False,
+    compare_sites: list[tuple[str, str]] | None = None,
+) -> list[str]:
     """Разбить справку на части, если не влезает в лимит Telegram."""
-    full = format_help_full(config, user_id=user_id, is_admin_log=is_admin_log)
+    full = format_help_full(
+        config,
+        user_id=user_id,
+        is_admin_log=is_admin_log,
+        compare_available=compare_available,
+        compare_sites=compare_sites,
+    )
     if len(full) <= 4000:
         return [full]
     # запасной разрез по разделам
@@ -160,23 +236,3 @@ def format_help_chunks(config: BotConfig, *, user_id: int = 0, is_admin_log: boo
     return chunks or [full[:4000]]
 
 
-HINT_AFTER_SEARCH = (
-    "\n\n<i>💡 В корзину: «Выбрать N» → проверьте вариант → "
-    "«Положить в корзину». Или «📦 Проверить» с точной строкой из прайса.</i>"
-)
-
-HINT_AFTER_CHECK = (
-    "\n\n<i>💡 В корзину — выберите вариант под сообщением и подтвердите. "
-    "Состав — «👀 Корзина».</i>"
-)
-
-HINT_AFTER_CHECK_LIST = (
-    "\n\n<i>💡 В корзину: «Выбрать N» → подтвердите нужную позицию.</i>"
-)
-
-HINT_AFTER_CART = (
-    "\n\n<i>💡 Проверить состав — «👀 Корзина». "
-    "Кто добавлял — «📜 Журнал».</i>"
-)
-
-PROMPT_FOOTER = "\n\n<i>❌ Отмена · 🏠 Меню · /help</i>"

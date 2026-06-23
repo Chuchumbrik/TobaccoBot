@@ -23,7 +23,7 @@ def _parse_admin_ids(raw: str) -> frozenset[int]:
 @dataclass(frozen=True)
 class BotConfig:
     telegram_token: str
-    flavor_search_limit: int = 15
+    flavor_search_limit: int = 50
     check_list_max_lines: int = 30
     telegram_proxy: str | None = None
     telegram_api_base_url: str | None = None
@@ -52,7 +52,7 @@ def load_config() -> BotConfig:
     log_path = os.environ.get("CART_LOG_PATH", "").strip()
     return BotConfig(
         telegram_token=token,
-        flavor_search_limit=int(os.environ.get("FLAVOR_SEARCH_LIMIT", "15")),
+        flavor_search_limit=int(os.environ.get("FLAVOR_SEARCH_LIMIT", "50")),
         check_list_max_lines=int(os.environ.get("CHECK_LIST_MAX_LINES", "30")),
         telegram_proxy=_env_proxy(),
         telegram_api_base_url=base_url,

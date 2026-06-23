@@ -6,9 +6,11 @@ import os
 from pathlib import Path
 
 from .auth import OshishaAuth, OshishaAuthError
-from .cart import CartAddBatchResult, CartView, OshishaCart
+from .cart import CartAddBatchResult, CartAddResult, CartView, OshishaCart
 from .catalog import OshishaCatalog, ProductCheckResult
-from .flavor_search import FlavorSearchHit, FlavorSearchResult, search_by_flavor
+from . import catalog_cache
+from .catalog_snapshot import CatalogSnapshot
+from .flavor_search import FlavorSearchHit, FlavorSearchResult
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SESSION = ROOT / "data" / "sessions" / "oshisha.json"
@@ -79,10 +81,19 @@ class OshishaService:
         indices: list[int],
     ) -> CartAddBatchResult:
         """Добавить в корзину позиции из результатов поиска по вкусу."""
-        self._ensure_login()
+        catalog = self._ensure_login()
         if self._auth is None:
             raise OshishaAuthError("Сессия не инициализирована")
-        items: list[tuple] = []
+
+        # CartAddResult уже импортирован на уровне модуля
+
+        verify = os.environ.get("CATALOG_VERIFY_CART", "1").strip().lower() not in (
+            "0",
+            "false",
+            "no",
+        )
+        pending: list[tuple] = []
+        skipped: list[CartAddResult] = []
         for i in indices:
             if i < 0 or i >= len(hits):
                 continue
@@ -90,8 +101,28 @@ class OshishaService:
             label = hit.product.name
             if hit.flavor_query:
                 label = f"{hit.flavor_query} → {hit.product.name}"
-            items.append((hit.product, label, 1))
-        return OshishaCart(self._auth).add_from_products(items)
+            product = hit.product
+            if verify:
+                product, ok = catalog_cache.verify_product_for_cart(catalog, hit.product)
+                if not ok:
+                    skipped.append(
+                        CartAddResult(
+                            query=label,
+                            success=False,
+                            message="нет в наличии (проверка перед корзиной)",
+                            matched_name=hit.product.name,
+                            product_id=hit.product.id,
+                        )
+                    )
+                    continue
+            pending.append((product, label, 1))
+
+        if not pending:
+            return CartAddBatchResult(items=skipped)
+
+        batch = OshishaCart(self._auth).add_from_products(pending)
+        batch.items = skipped + batch.items
+        return batch
 
     def view_cart(self) -> CartView:
         """Содержимое корзины на сайте."""
@@ -108,15 +139,21 @@ class OshishaService:
         in_stock_only: bool = False,
     ) -> FlavorSearchResult:
         catalog = self._ensure_login()
-        return search_by_flavor(
+        return catalog_cache.search_flavor(
             catalog,
             query,
             limit=limit,
             in_stock_only=in_stock_only,
         )
 
+    def warmup_catalog(self, *, force: bool = False) -> CatalogSnapshot:
+        """Полный снимок каталога для локального поиска."""
+        catalog = self._ensure_login()
+        return catalog_cache.refresh(catalog, force=force)
+
     def close(self) -> None:
         if self._auth:
             self._auth.close()
             self._auth = None
             self._catalog = None
+        catalog_cache.invalidate()

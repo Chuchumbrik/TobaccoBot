@@ -8,26 +8,37 @@ import re
 from telegram import BotCommand
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
+from bot.catalog_background import start_catalog_background
+from bot.night_digest import run_night_digest, start_night_digest
 from bot.config import BotConfig, load_config
 from bot.handlers import (
     CONFIG_KEY,
+    SERVICE_KEY,
+    cmd_apply_vocab_patch,
+    cmd_advise,
     cmd_cart,
     cmd_cartlist,
     cmd_cartlog,
     cmd_cartview,
     cmd_logreset,
     cmd_check,
+    cmd_digest,
     cmd_help,
     cmd_list,
     cmd_menu,
+    cmd_reload_prompts,
     cmd_search,
     cmd_start,
+    cmd_compare,
+    cmd_theme,
+    cmd_update_taxonomy,
     handle_callback_query,
     handle_cyrillic_search_command,
     handle_menu_button,
     handle_text_message,
 )
 from bot.keyboards import MENU_BUTTONS
+from shops.hub import ShopHub
 
 SEARCH_COMMANDS = ["search", "poisk", "vkus", "flavor", "v"]
 
@@ -39,19 +50,23 @@ _MENU_PATTERN = "^(" + "|".join(re.escape(b) for b in MENU_BUTTONS) + ")$"
 async def _setup_bot_commands(application: Application) -> None:
     await application.bot.set_my_commands(
         [
-            BotCommand("start", "Главное меню"),
-            BotCommand("help", "Подробная справка"),
-            BotCommand("menu", "Вернуться в меню"),
-            BotCommand("search", "Поиск по вкусу на сайте"),
-            BotCommand("check", "Проверить одну позицию"),
-            BotCommand("list", "Проверить список строк"),
-            BotCommand("cart", "В корзину по строке (команда)"),
-            BotCommand("cartlist", "Список в корзину (команда)"),
-            BotCommand("cartview", "Смотреть корзину сайта"),
-            BotCommand("cartlog", "Журнал: кто добавлял"),
-            BotCommand("logreset", "Новый заказ в журнале"),
+            BotCommand("start",    "🏠 Главное меню"),
+            BotCommand("advise",   "🎯 Советник — ИИ подберёт вкусы"),
+            BotCommand("search",   "🔍 Поиск по вкусу"),
+            BotCommand("check",    "📦 Проверить одну позицию"),
+            BotCommand("list",     "📝 Проверить список позиций"),
+            BotCommand("cartview", "👀 Корзина на сайте"),
+            BotCommand("cartlog",  "📜 Журнал добавлений"),
+            BotCommand("logreset", "🔄 Новый заказ"),
+            BotCommand("theme",    "🎨 Тематический поиск (выпечка, травянистые…)"),
+            BotCommand("help",     "❓ Справка"),
         ]
     )
+    # Инициализируем ShopHub сразу, чтобы фоновый прогрев каталога мог стартовать
+    if SERVICE_KEY not in application.bot_data:
+        application.bot_data[SERVICE_KEY] = ShopHub.from_env()
+    start_catalog_background(application)
+    start_night_digest(application)
 
 
 def _application_builder(config: BotConfig):
@@ -83,6 +98,7 @@ def build_application(config: BotConfig | None = None) -> Application:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("menu", cmd_menu))
+    app.add_handler(CommandHandler("advise", cmd_advise))
     app.add_handler(CommandHandler("check", cmd_check))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("cart", cmd_cart))
@@ -90,6 +106,12 @@ def build_application(config: BotConfig | None = None) -> Application:
     app.add_handler(CommandHandler("cartview", cmd_cartview))
     app.add_handler(CommandHandler("cartlog", cmd_cartlog))
     app.add_handler(CommandHandler("logreset", cmd_logreset))
+    app.add_handler(CommandHandler("compare", cmd_compare))
+    app.add_handler(CommandHandler("theme", cmd_theme))
+    app.add_handler(CommandHandler("update_taxonomy", cmd_update_taxonomy))
+    app.add_handler(CommandHandler("reload_prompts", cmd_reload_prompts))
+    app.add_handler(CommandHandler("digest", cmd_digest))
+    app.add_handler(CommandHandler("apply_vocab_patch", cmd_apply_vocab_patch))
     app.add_handler(CommandHandler(SEARCH_COMMANDS, cmd_search))
     app.add_handler(
         MessageHandler(
