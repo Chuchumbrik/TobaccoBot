@@ -53,7 +53,12 @@ def _format_weight_variants(r: "ProductCheckResult") -> str | None:
 
 def format_check_result(r: "ProductCheckResult") -> str:
     if r.status == "не найден":
-        return f"❓ <b>{_esc(r.query)}</b> — не найден на площадке"
+        lines = [f"❓ <b>{_esc(r.query)}</b> — не найден на площадке"]
+        if r.parsed:
+            summary = r.parsed.get("summary", "")
+            if summary:
+                lines.append(f"   <i>→ {_esc(summary)}</i>")
+        return "\n".join(lines)
 
     weight_mismatch = bool(
         r.requested_weight_g
