@@ -22,10 +22,10 @@
   },
 
   "snobless": {
-    "display": "Сноблес",
-    "catalog_section": "/catalog/burn_black/",
-    "site_names": ["Burn BLACK"],
-    "aliases": ["сноблес", "snobless", "сноблесс", "snowless"]
+    "display": "Snobless",
+    "catalog_section": "/catalog/snobless/",
+    "site_names": ["Snobless", "SNOBLESS"],
+    "aliases": ["сноблес", "snobless", "сноблесс", "snowless", "snob less"]
   },
 
   "kraken": {
