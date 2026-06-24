@@ -33,6 +33,242 @@
     "search_hints": ["BlackBurn Миндальная груша"]
   },
 
+  "_comment_bb_snapshot": "--- Вкусы подтверждены в снимке oshisha.cc ---",
+
+  "bb_original_popcorn": {
+    "display": "Оригинальный попкорн",
+    "aliases": ["попкорн", "оригинальный попкорн", "original popcorn", "попкорн бб"],
+    "site_terms": ["Original Popcorn", "Оригинальный попкорн"],
+    "search_hints": ["BlackBurn Original Popcorn"],
+    "brands": ["blackburn"]
+  },
+  "bb_berry_halls": {
+    "display": "Ягодный Холлс",
+    "aliases": ["ягодный холлс", "berry halls", "холлс ягодный", "холлс", "halls"],
+    "site_terms": ["Berry Halls", "Ягодный Холлс"],
+    "search_hints": ["BlackBurn Berry Halls"],
+    "brands": ["blackburn"]
+  },
+  "bb_almaty_halva": {
+    "display": "Алматинская халва",
+    "aliases": ["алматинская халва", "халва алматинская", "алматинск халва", "халва"],
+    "site_terms": ["Алматинская халва"],
+    "search_hints": ["BlackBurn Алматинская халва"],
+    "brands": ["blackburn"]
+  },
+  "bb_violet_lemonade": {
+    "display": "Фиалковый лимонад",
+    "aliases": ["фиалковый лимонад", "фиалка лимонад", "violet lemonade", "фиалков лимонад"],
+    "site_terms": ["Фиалковый лимонад", "Violet Lemonade"],
+    "search_hints": ["BlackBurn Фиалковый лимонад"],
+    "brands": ["blackburn"]
+  },
+  "bb_cranberry_morse": {
+    "display": "Клюквенный морс",
+    "aliases": ["клюквенный морс", "морс клюква", "cranberry morse", "клюква морс"],
+    "site_terms": ["Клюквенный морс", "Cranberry Morse"],
+    "search_hints": ["BlackBurn Клюквенный морс"],
+    "brands": ["blackburn"]
+  },
+  "bb_bananini": {
+    "display": "Банан (Bananini)",
+    "aliases": ["банан бб", "банан блэкберн", "bananini", "банан bb"],
+    "site_terms": ["Bananini", "Банан"],
+    "search_hints": ["BlackBurn Bananini"],
+    "brands": ["blackburn"]
+  },
+  "bb_apple_pomegranate_peach": {
+    "display": "Яблоко, гранат, персик",
+    "aliases": ["яблоко гранат персик", "гранат яблоко персик", "apple pomegranate peach", "яблоко персик гранат"],
+    "site_terms": ["Яблоко, гранат, персик"],
+    "search_hints": ["BlackBurn Яблоко гранат персик"],
+    "brands": ["blackburn"]
+  },
+  "bb_pudding": {
+    "display": "Пудинг",
+    "aliases": ["пудинг", "pudding", "бб пудинг"],
+    "site_terms": ["Pudding", "Пудинг"],
+    "search_hints": ["BlackBurn Pudding"],
+    "brands": ["blackburn"]
+  },
+
+  "_comment_bb_extended": "--- Вкусы подтверждены по данным сайтов (могут отсутствовать в снимке) ---",
+
+  "bb_peach_yogurt": {
+    "display": "Персиковый йогурт",
+    "aliases": ["персиковый йогурт", "peach yogurt", "йогурт персик", "персик йогурт"],
+    "site_terms": ["Peach Yogurt", "Персиковый йогурт"],
+    "search_hints": ["BlackBurn Peach Yogurt"],
+    "brands": ["blackburn"]
+  },
+  "bb_topze": {
+    "display": "Травяные леденцы (Topze)",
+    "aliases": ["топзе", "topze", "травяные леденцы", "herb candy", "травяной леденец"],
+    "site_terms": ["Topze"],
+    "search_hints": ["BlackBurn Topze"],
+    "brands": ["blackburn"]
+  },
+  "bb_roze_t": {
+    "display": "Чай с розой (RoZe T)",
+    "aliases": ["розе ти", "roze t", "чай с розой", "роза чай", "rose tea"],
+    "site_terms": ["RoZe T", "Чай с розой"],
+    "search_hints": ["BlackBurn RoZe T"],
+    "brands": ["blackburn"]
+  },
+  "bb_iceberg": {
+    "display": "Холодок (IceBerg)",
+    "aliases": ["айсберг", "iceberg", "холодок бб"],
+    "site_terms": ["IceBerg", "Холодок"],
+    "search_hints": ["BlackBurn IceBerg"],
+    "brands": ["blackburn"]
+  },
+  "bb_black_honey": {
+    "display": "Черный мед",
+    "aliases": ["черный мед", "чёрный мёд", "black honey", "мед черный"],
+    "site_terms": ["Black Honey", "Черный мед"],
+    "search_hints": ["BlackBurn Black Honey"],
+    "brands": ["blackburn"]
+  },
+  "bb_lemon_sweets": {
+    "display": "Лимонные леденцы",
+    "aliases": ["лимонные леденцы", "lemon sweets", "леденцы лимон", "лимон леденцы"],
+    "site_terms": ["Lemon Sweets", "Лимонные леденцы"],
+    "search_hints": ["BlackBurn Lemon Sweets"],
+    "brands": ["blackburn"]
+  },
+  "bb_apple_strudel": {
+    "display": "Яблочный штрудель",
+    "aliases": ["яблочный штрудель", "apl strudl", "apple strudel", "штрудель яблоко"],
+    "site_terms": ["Apl Strudl", "Яблочный штрудель", "Apple Strudel"],
+    "search_hints": ["BlackBurn Apl Strudl"],
+    "brands": ["blackburn"]
+  },
+  "bb_cane_mint": {
+    "display": "Тростниковая мята",
+    "aliases": ["тростниковая мята", "cane mint", "тростник мята", "мята тростниковая"],
+    "site_terms": ["Cane Mint", "Тростниковая мята"],
+    "search_hints": ["BlackBurn Cane Mint"],
+    "brands": ["blackburn"]
+  },
+  "bb_give_me_guva": {
+    "display": "Гуава, лайм, киви",
+    "aliases": ["гив ми гуава", "give me guva", "гуава лайм киви", "гуава", "guava lime kiwi"],
+    "site_terms": ["Give Me Guva"],
+    "search_hints": ["BlackBurn Give Me Guva"],
+    "brands": ["blackburn"]
+  },
+  "bb_ice_baby": {
+    "display": "Ice Baby (ягодный сорбет + грейпфрут)",
+    "aliases": ["айс беби", "ice baby", "ягодный сорбет грейпфрут", "айс бейби"],
+    "site_terms": ["Ice Baby"],
+    "search_hints": ["BlackBurn Ice Baby"],
+    "brands": ["blackburn"]
+  },
+  "bb_kiwi_stoner": {
+    "display": "Кивистонер",
+    "aliases": ["киви стонер", "kiwi stoner", "кивистонер"],
+    "site_terms": ["Kiwi stoner", "Kiwi Stoner"],
+    "search_hints": ["BlackBurn Kiwi stoner"],
+    "brands": ["blackburn"]
+  },
+  "bb_overdose": {
+    "display": "Overdose (лимон-лайм)",
+    "aliases": ["овердоз", "overdose", "бб овердоз"],
+    "site_terms": ["Overdose"],
+    "search_hints": ["BlackBurn Overdose"],
+    "brands": ["blackburn"]
+  },
+  "bb_green_tea": {
+    "display": "Зелёный чай (Green Tea)",
+    "aliases": ["зеленый чай бб", "green tea бб", "бб зеленый чай"],
+    "site_terms": ["Green Tea"],
+    "search_hints": ["BlackBurn Green Tea"],
+    "brands": ["blackburn"]
+  },
+  "bb_malibu": {
+    "display": "Малибу",
+    "aliases": ["малибу бб", "malibu бб"],
+    "site_terms": ["Malibu"],
+    "search_hints": ["BlackBurn Malibu"],
+    "brands": ["blackburn"]
+  },
+
+  "_comment_bb_shock": "--- Линейка BlackBurn Shock (кислые вкусы) ---",
+
+  "bb_cherry_shock": {
+    "display": "Вишня Шок",
+    "aliases": ["вишня шок", "черри шок", "cherry shock", "вишня кислая"],
+    "site_terms": ["Cherry Shock", "Вишня Шок"],
+    "search_hints": ["BlackBurn Cherry Shock"],
+    "brands": ["blackburn"]
+  },
+  "bb_apple_shock": {
+    "display": "Яблоко Шок",
+    "aliases": ["яблоко шок", "эппл шок", "apple shock", "яблоко кислое"],
+    "site_terms": ["Apple Shock", "Яблоко Шок"],
+    "search_hints": ["BlackBurn Apple Shock"],
+    "brands": ["blackburn"]
+  },
+  "bb_lemon_shock": {
+    "display": "Лимон Шок",
+    "aliases": ["лимон шок", "lemon shock", "лимон кислый"],
+    "site_terms": ["Lemon Shock", "Лимон Шок"],
+    "search_hints": ["BlackBurn Lemon Shock"],
+    "brands": ["blackburn"]
+  },
+  "bb_pineapple_shock": {
+    "display": "Ананас Шок",
+    "aliases": ["ананас шок", "pineapple shock", "ananas shock", "ананас кислый"],
+    "site_terms": ["Pineapple Shock", "Ananas Shock", "Ананас Шок"],
+    "search_hints": ["BlackBurn Pineapple Shock"],
+    "brands": ["blackburn"]
+  },
+  "bb_gooseberry_shock": {
+    "display": "Крыжовник Шок",
+    "aliases": ["крыжовник шок", "gooseberry shock", "крыжовник кислый"],
+    "site_terms": ["Gooseberry Shock", "Крыжовник Шок"],
+    "search_hints": ["BlackBurn Gooseberry Shock"],
+    "brands": ["blackburn"]
+  },
+
+  "_comment_bb_something": "--- Линейка BlackBurn Something ---",
+
+  "bb_something_fresh": {
+    "display": "Something Fresh",
+    "aliases": ["сомтинг фреш", "something fresh", "что-то свежее бб"],
+    "site_terms": ["Something Fresh"],
+    "search_hints": ["BlackBurn Something Fresh"],
+    "brands": ["blackburn"]
+  },
+  "bb_something_sweet": {
+    "display": "Something Sweet",
+    "aliases": ["сомтинг свит", "something sweet", "что-то сладкое бб"],
+    "site_terms": ["Something Sweet"],
+    "search_hints": ["BlackBurn Something Sweet"],
+    "brands": ["blackburn"]
+  },
+  "bb_something_berry": {
+    "display": "Something Berry",
+    "aliases": ["сомтинг бери", "something berry", "что-то ягодное бб"],
+    "site_terms": ["Something Berry"],
+    "search_hints": ["BlackBurn Something Berry"],
+    "brands": ["blackburn"]
+  },
+  "bb_something_tropical": {
+    "display": "Something Tropical",
+    "aliases": ["сомтинг тропикал", "something tropical", "что-то тропическое бб"],
+    "site_terms": ["Something Tropical"],
+    "search_hints": ["BlackBurn Something Tropical"],
+    "brands": ["blackburn"]
+  },
+  "bb_something_icy": {
+    "display": "Something Icy",
+    "aliases": ["сомтинг айси", "something icy", "что-то ледяное бб"],
+    "site_terms": ["Something Icy"],
+    "search_hints": ["BlackBurn Something Icy"],
+    "brands": ["blackburn"]
+  },
+
   "_section_sarma": "=== САРМА специфические вкусы ===",
 
   "sarma_country_cherry": {
