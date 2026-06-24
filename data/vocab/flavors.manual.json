@@ -10,9 +10,10 @@
     "search_hints": ["BlackBurn Haribon", "мармелад с колой BlackBurn"]
   },
   "bb_strawberry_jam": {
-    "aliases": ["клубничный джем", "клуб джем", "клубнич"],
-    "site_terms": ["Strawberry Jam", "клубничное варенье"],
-    "search_hints": ["BlackBurn клубнич", "Strawberry Jam"]
+    "display": "Клубничный джем",
+    "aliases": ["клубничный джем", "клуб джем", "клубнич", "strawberry jam"],
+    "site_terms": ["Strawberry Jam", "Клубничный джем"],
+    "search_hints": ["BlackBurn Strawberry Jam", "BlackBurn Клубничный джем"]
   },
   "bb_cherry_garden": {
     "display": "Cherry Garden (черешневый сок)",
@@ -59,14 +60,14 @@
   "bb_violet_lemonade": {
     "display": "Фиалковый лимонад",
     "aliases": ["фиалковый лимонад", "фиалка лимонад", "violet lemonade", "фиалков лимонад"],
-    "site_terms": ["Фиалковый лимонад", "Violet Lemonade"],
+    "site_terms": ["Фиалковый лимонад"],
     "search_hints": ["BlackBurn Фиалковый лимонад"],
     "brands": ["blackburn"]
   },
   "bb_cranberry_morse": {
     "display": "Клюквенный морс",
     "aliases": ["клюквенный морс", "морс клюква", "cranberry morse", "клюква морс"],
-    "site_terms": ["Клюквенный морс", "Cranberry Morse"],
+    "site_terms": ["Клюквенный морс"],
     "search_hints": ["BlackBurn Клюквенный морс"],
     "brands": ["blackburn"]
   },
