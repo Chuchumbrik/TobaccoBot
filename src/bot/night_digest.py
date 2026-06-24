@@ -418,6 +418,9 @@ async def run_night_digest(
     full_digest = header + digest_text
 
     # ── Анализ 2: пробелы в словаре ──────────────────────────────────────────
+    # Пауза между вызовами Groq чтобы не выбить rate limit (tokens/min)
+    await asyncio.sleep(35)
+
     vocab_text: str | None = None
     try:
         vocab_text = await run_vocab_analysis(entries)
@@ -430,6 +433,8 @@ async def run_night_digest(
         vocab_full = f"📚 <b>Анализ словаря</b>\n\n{vocab_text}"
 
     # ── Патч 2Г: генерация JSON-патча для taxonomy ────────────────────────────
+    await asyncio.sleep(35)
+
     zero_results = get_zero_result_queries(min_occurrences=1)
     try:
         taxonomy_keys = set(_load_taxonomy_summary().replace(": ", "\n").split())

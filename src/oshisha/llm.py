@@ -527,8 +527,18 @@ async def _retry(coro_factory, retries: int = 2):
             return await coro_factory()
         except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
             last = exc
-            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code < 500:
-                raise
+            if isinstance(exc, httpx.HTTPStatusError):
+                status = exc.response.status_code
+                if status == 429:
+                    # Rate limit: ждём согласно Retry-After или фиксированный backoff
+                    retry_after = exc.response.headers.get("retry-after")
+                    wait = float(retry_after) if retry_after else 60.0 * (attempt + 1)
+                    logger.warning("LLM rate limit 429, ждём %.0f сек (попытка %d)", wait, attempt + 1)
+                    if attempt < retries:
+                        await asyncio_sleep(wait)
+                        continue
+                elif status < 500:
+                    raise
             if attempt < retries:
                 await asyncio_sleep(0.4 * (attempt + 1))
     if last:
