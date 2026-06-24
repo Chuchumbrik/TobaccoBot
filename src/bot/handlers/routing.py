@@ -122,14 +122,24 @@ def _parse_brand_structured_list(text: str) -> list[str]:
     return out
 
 
-def _looks_like_check_list(text: str) -> bool:
-    """True если текст — многострочный список позиций с заголовками брендов.
+_NL_STARTERS: frozenset[str] = frozenset([
+    "хочу", "ищу", "найди", "нет", "без", "не", "что", "как", "подбери",
+    "посоветуй", "можешь", "хочется", "нравится", "дай", "покажи",
+    "suggest", "want", "give", "show", "help",
+])
 
-    Критерий: есть хотя бы одна строка «Бренд:» И после парсинга ≥ 2 строки.
-    Это отличает «Догма:\nПерсик» от обычного текста-запроса советнику.
+
+def _looks_like_check_list(text: str) -> bool:
+    """True если текст — список позиций для проверки наличия.
+
+    Два варианта:
+    1. Есть заголовки брендов («Бренд:») → достаточно 2 строк.
+    2. Обычный список ≥4 коротких строк без слов-маркеров естественного языка.
     """
     if "\n" not in text:
         return False
+
+    # Вариант 1: заголовки брендов («Бренд:» на отдельной строке)
     has_brand_header = any(
         ln.strip().endswith(":")
         and not _SEPARATOR_RE.fullmatch(ln.strip())
@@ -137,9 +147,25 @@ def _looks_like_check_list(text: str) -> bool:
         and ln.strip()[:-1].strip().lower() not in _CATEGORY_WORDS
         for ln in text.splitlines()
     )
-    if not has_brand_header:
+    if has_brand_header:
+        return len(_parse_brand_structured_list(text)) >= 2
+
+    # Вариант 2: обычный список — минимум 4 непустых коротких строки
+    lines = [
+        ln.strip() for ln in text.splitlines()
+        if ln.strip()
+        and not _SEPARATOR_RE.fullmatch(ln.strip())
+        and ln.strip().lower() not in _CATEGORY_WORDS
+    ]
+    if len(lines) < 4:
         return False
-    return len(_parse_brand_structured_list(text)) >= 2
+    for ln in lines:
+        if len(ln) > 80:
+            return False
+        first_word = ln.lower().split()[0].rstrip("!?,") if ln.split() else ""
+        if first_word in _NL_STARTERS:
+            return False
+    return True
 
 
 # ── Детектор приветствий ─────────────────────────────────────────────────────

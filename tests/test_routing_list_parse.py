@@ -117,3 +117,39 @@ class TestLooksLikeCheckList:
     def test_category_word_header_not_brand(self):
         # «Табак:» — категорийное слово, не бренд
         assert self._check("Табак:\nМалина\nКлубника") is False
+
+    def test_plain_list_4_lines_detected(self):
+        text = "Сарма - деревенская вишня 200\nСарма малина 200\nБаза масло\nСноблес - пломбир"
+        assert self._check(text) is True
+
+    def test_plain_list_12_lines_from_screenshot(self):
+        text = (
+            "Сарма - деревенская вишня 200 Зх\n"
+            "Сарма малина 200\n"
+            "База масло\n"
+            "Сноблес - пломбир\n"
+            "Бб - пудинг\n"
+            "бб - мармелад кола 200 х2\n"
+            "бб - клубничный джем 200\n"
+            "Deus - love is 200гр\n"
+            "Must Have - кокос 125\n"
+            "Бб - черешневый сок 200гр\n"
+            "Бб персиковый йогурт 200гр\n"
+            "Арбуз-дыня 200гр"
+        )
+        assert self._check(text) is True
+
+    def test_plain_list_3_lines_not_detected(self):
+        # 3 строки — слишком мало для plain-списка без заголовков
+        assert self._check("Малина\nКлубника\nАрбуз") is False
+
+    def test_advise_multiline_not_detected(self):
+        # «Хочу» в начале строки — не список
+        text = "хочу что-то сладкое\nно без мяты\nи освежающее\nи лёгкое"
+        assert self._check(text) is False
+
+    def test_long_line_not_detected(self):
+        # Строка > 80 символов — похоже на текст, не запрос
+        long = "A" * 85
+        text = f"Малина\nКлубника\nАрбуз\n{long}"
+        assert self._check(text) is False
