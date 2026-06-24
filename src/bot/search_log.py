@@ -130,9 +130,15 @@ def get_zero_result_queries(
             try:
                 data = json.loads(line)
                 if data.get("results_count", 1) == 0:
-                    intent = data.get("intent", data.get("query", "")).strip().lower()
-                    if intent:
-                        counts[intent] = counts.get(intent, 0) + 1
+                    intent = data.get("query", data.get("intent", "")).strip().lower()
+                    if not intent:
+                        continue
+                    # Фильтруем мусор: JSON-строки и многострочные списки
+                    if intent.startswith("{") or intent.startswith("["):
+                        continue
+                    if "\n" in intent or len(intent) > 120:
+                        continue
+                    counts[intent] = counts.get(intent, 0) + 1
             except Exception:
                 pass
     except Exception as exc:

@@ -663,17 +663,22 @@ async def normalize_query(query: str) -> str:
 
         # Пробуем распарсить JSON и взять первый терм
         data = extract_json_object(raw)
-        if data and isinstance(data.get("terms"), list) and data["terms"]:
-            term = str(data["terms"][0]).strip()
-            confidence = data.get("confidence", "medium")
-            if term and len(term) <= 100:
-                logger.info(
-                    "normalize_query %r → %r (conf=%s, all=%s)",
-                    query, term, confidence, data["terms"],
-                )
-                return _validate_normalize_result(query, term)
+        if data is not None:
+            terms = data.get("terms") if isinstance(data.get("terms"), list) else []
+            if terms:
+                term = str(terms[0]).strip()
+                confidence = data.get("confidence", "medium")
+                if term and len(term) <= 100:
+                    logger.info(
+                        "normalize_query %r → %r (conf=%s, all=%s)",
+                        query, term, confidence, terms,
+                    )
+                    return _validate_normalize_result(query, term)
+            # LLM вернул JSON с пустым terms — нечего нормализовывать, оставляем исходный
+            logger.debug("normalize_query %r: пустой terms, возвращаем оригинал", query)
+            return query
 
-        # Fallback: raw строка
+        # Fallback: raw не JSON — пробуем как строку
         return _validate_normalize_result(query, raw)
 
     except Exception as e:
